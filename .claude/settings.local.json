@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs javac --source 17 --target 17 -cp \"out;lib/flatlaf-3.5.4.jar\" -d out)",
+      "PowerShell(Get-Process javaw -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)"
+    ]
+  }
+}
