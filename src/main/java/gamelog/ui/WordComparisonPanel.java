@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
  */
 public class WordComparisonPanel extends JPanel {
 
+    private static final File CATEGORIES_DIR  = new File(System.getProperty("user.home"), ".gameloganalyzer");
+    private static final File CATEGORIES_FILE = new File(CATEGORIES_DIR, "word_categories.properties");
+
     private JTextArea wordsArea;
     private JButton analyzeBtn;
     private JButton exportBtn;
@@ -30,10 +33,15 @@ public class WordComparisonPanel extends JPanel {
     private boolean syncingCombo = false;
     private List<ComparisonRow> rows = new ArrayList<>();
 
+    private JTabbedPane controlTabs;
+    private JPanel categoryListPanel;
+    private final LinkedHashMap<String, String> categories = new LinkedHashMap<>();
+
     public WordComparisonPanel(MainWindow win) {
         setBackground(Theme.BG_BASE);
         setLayout(new BorderLayout());
         build();
+        loadCategories();
     }
 
     private void build() {
@@ -64,17 +72,32 @@ public class WordComparisonPanel extends JPanel {
     }
 
     private JPanel controls() {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(Theme.BG_SURFACE);
+        wrapper.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.DIVIDER));
+
+        controlTabs = new JTabbedPane();
+        controlTabs.setBackground(Theme.BG_SURFACE);
+        controlTabs.setForeground(Theme.TEXT_SEC);
+        controlTabs.setFont(Theme.FONT_BODY);
+        controlTabs.addTab("Análise", analysisPane());
+        controlTabs.addTab("Categorias", categoriesPane());
+
+        wrapper.add(controlTabs, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private JPanel analysisPane() {
         JPanel p = new JPanel();
         p.setBackground(Theme.BG_SURFACE);
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-        p.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.DIVIDER),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         p.add(label("Palavras para comparar"));
         p.add(Box.createVerticalStrut(8));
 
         wordsArea = Theme.terminal();
+        wordsArea.setEditable(true);
         wordsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         wordsArea.setText("quijote, sancho, caballero\n" +
                           "dracula, vampire, blood, night\n" +
@@ -132,6 +155,85 @@ public class WordComparisonPanel extends JPanel {
                 "ela é um sinal narrativo relevante naquele texto: personagem recorrente, tema central ou elemento de cena." +
                 "</body></html>"), BorderLayout.CENTER);
         p.add(note);
+        return p;
+    }
+
+    private JPanel categoriesPane() {
+        JPanel p = new JPanel();
+        p.setBackground(Theme.BG_SURFACE);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        p.add(label("Nova categoria"));
+        p.add(Box.createVerticalStrut(8));
+
+        JTextField nameField = new JTextField();
+        nameField.setFont(Theme.FONT_BODY);
+        nameField.setBackground(Theme.BG_CARD);
+        nameField.setForeground(Theme.TEXT_PRI);
+        nameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.DIVIDER_LT),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+        nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        nameField.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(nameField);
+        p.add(Box.createVerticalStrut(6));
+
+        JTextArea catWordsArea = Theme.terminal();
+        catWordsArea.setEditable(true);
+        catWordsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        JScrollPane catSp = new JScrollPane(catWordsArea);
+        catSp.setPreferredSize(new Dimension(0, 80));
+        catSp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        catSp.setBorder(BorderFactory.createLineBorder(Theme.DIVIDER_LT));
+        catSp.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(catSp);
+        p.add(Box.createVerticalStrut(6));
+
+        JButton saveBtn = Theme.primaryBtn("Salvar categoria");
+        saveBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        saveBtn.setAlignmentX(LEFT_ALIGNMENT);
+        saveBtn.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String words = catWordsArea.getText().trim();
+            if (name.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Digite um nome para a categoria.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (words.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Digite ao menos uma palavra.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            categories.put(name, words);
+            saveCategories();
+            renderCategoryList();
+            nameField.setText("");
+            catWordsArea.setText("");
+        });
+        p.add(saveBtn);
+        p.add(Box.createVerticalStrut(4));
+
+        JButton importBtn = Theme.ghostBtn("Importar palavras da análise");
+        importBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        importBtn.setAlignmentX(LEFT_ALIGNMENT);
+        importBtn.addActionListener(e -> catWordsArea.setText(wordsArea.getText()));
+        p.add(importBtn);
+
+        p.add(Box.createVerticalStrut(18));
+        p.add(label("Categorias salvas"));
+        p.add(Box.createVerticalStrut(8));
+
+        categoryListPanel = new JPanel();
+        categoryListPanel.setLayout(new BoxLayout(categoryListPanel, BoxLayout.Y_AXIS));
+        categoryListPanel.setBackground(Theme.BG_BASE);
+
+        JScrollPane listScroll = new JScrollPane(categoryListPanel);
+        listScroll.setBorder(BorderFactory.createLineBorder(Theme.DIVIDER_LT));
+        listScroll.getViewport().setBackground(Theme.BG_BASE);
+        listScroll.setAlignmentX(LEFT_ALIGNMENT);
+        listScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        p.add(listScroll);
+
         return p;
     }
 
@@ -344,6 +446,102 @@ public class WordComparisonPanel extends JPanel {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Erro ao exportar", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void loadCategories() {
+        categories.clear();
+        if (!CATEGORIES_FILE.exists()) { renderCategoryList(); return; }
+        Properties props = new Properties();
+        try (InputStream in = new FileInputStream(CATEGORIES_FILE)) {
+            props.load(in);
+            for (String key : props.stringPropertyNames()) categories.put(key, props.getProperty(key));
+        } catch (IOException ignored) {}
+        renderCategoryList();
+    }
+
+    private void saveCategories() {
+        try {
+            CATEGORIES_DIR.mkdirs();
+            Properties props = new Properties();
+            categories.forEach(props::setProperty);
+            try (OutputStream out = new FileOutputStream(CATEGORIES_FILE)) {
+                props.store(out, null);
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao salvar categorias: " + ex.getMessage(),
+                    "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void renderCategoryList() {
+        if (categoryListPanel == null) return;
+        categoryListPanel.removeAll();
+        if (categories.isEmpty()) {
+            JLabel empty = new JLabel("  Nenhuma categoria salva.");
+            empty.setFont(Theme.FONT_SMALL);
+            empty.setForeground(Theme.TEXT_MUTED);
+            empty.setBorder(BorderFactory.createEmptyBorder(12, 8, 12, 8));
+            categoryListPanel.add(empty);
+        } else {
+            boolean first = true;
+            for (Map.Entry<String, String> e : categories.entrySet()) {
+                if (!first) categoryListPanel.add(new JSeparator());
+                categoryListPanel.add(categoryRow(e.getKey(), e.getValue()));
+                first = false;
+            }
+        }
+        categoryListPanel.revalidate();
+        categoryListPanel.repaint();
+    }
+
+    private JPanel categoryRow(String name, String words) {
+        JPanel row = new JPanel(new BorderLayout(6, 2));
+        row.setBackground(Theme.BG_CARD);
+        row.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 8));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+
+        JLabel nameLabel = new JLabel(name);
+        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        nameLabel.setForeground(Theme.ACCENT);
+
+        String preview = words.replaceAll("\\s+", " ").trim();
+        if (preview.length() > 38) preview = preview.substring(0, 35) + "…";
+        JLabel wordsLabel = new JLabel(preview);
+        wordsLabel.setFont(Theme.FONT_SMALL);
+        wordsLabel.setForeground(Theme.TEXT_MUTED);
+
+        JPanel textCol = new JPanel(new BorderLayout(0, 2));
+        textCol.setOpaque(false);
+        textCol.add(nameLabel, BorderLayout.NORTH);
+        textCol.add(wordsLabel, BorderLayout.CENTER);
+        row.add(textCol, BorderLayout.CENTER);
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        btns.setOpaque(false);
+
+        JButton useBtn = Theme.ghostBtn("Usar");
+        useBtn.setFont(Theme.FONT_SMALL);
+        useBtn.addActionListener(e -> {
+            wordsArea.setText(words);
+            controlTabs.setSelectedIndex(0);
+        });
+        btns.add(useBtn);
+
+        JButton delBtn = Theme.ghostBtn("×");
+        delBtn.setForeground(Theme.RED);
+        delBtn.addActionListener(e -> {
+            int ok = JOptionPane.showConfirmDialog(this,
+                    "Excluir a categoria \"" + name + "\"?", "Confirmar", JOptionPane.YES_NO_OPTION);
+            if (ok == JOptionPane.YES_OPTION) {
+                categories.remove(name);
+                saveCategories();
+                renderCategoryList();
+            }
+        });
+        btns.add(delBtn);
+
+        row.add(btns, BorderLayout.EAST);
+        return row;
     }
 
     private void styleTable(JTable t) {
