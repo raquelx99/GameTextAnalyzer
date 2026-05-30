@@ -58,6 +58,11 @@ public class ChartGenerator {
         saveChart(chartRankingByWorld(results),      outputDir + "/chart_ranking_world.png");
         saveChart(chartWordDensity(results),         outputDir + "/chart_word_density.png");
 
+        saveChart(chartBestByFamily(results),        outputDir + "/chart_best_by_family.png");
+        saveChart(chartCpuStrategyBranch(results),   outputDir + "/chart_cpu_strategy_branch.png");
+        saveChart(chartVirtualThreadsBranch(results),outputDir + "/chart_virtual_threads_branch.png");
+        saveChart(chartGpuBranch(results),           outputDir + "/chart_gpu_branch.png");
+
         System.out.println("\n  Charts saved to: " + new File(outputDir).getAbsolutePath());
     }
 
@@ -235,7 +240,7 @@ public class ChartGenerator {
         for (String f : files) {
             Map<String, Double> row = new LinkedHashMap<>();
             row.put("SerialCPU", medianTime(results, f, "SerialCPU"));
-            row.put("Melhor ParallelCPU", bestParallelCpuMedian(results, f));
+            row.put("Melhor ParallelCPU", bestCpuStrategyMedian(results, f));
             row.put(gpuLabel(results), medianTime(results, f, gpuLabel(results)));
             data.put(shortName(f), row);
         }
@@ -274,6 +279,74 @@ public class ChartGenerator {
             data.put(shortName(f) + " (" + r.wordSearched + ")", row);
         }
         return groupedBarChart("Densidade da palavra-tema por obra", "Obra / Palavra", "Ocorrências a cada 10 mil palavras", data, series);
+    }
+
+    // 14 — Best strategy of each family per text
+    private static BufferedImage chartBestByFamily(List<BenchmarkResult> results) {
+        List<String> files = orderedFiles(results);
+        List<String> families = orderedFamilies(results);
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String f : files) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            for (String fam : families) {
+                row.put(familyLabel(fam), bestMedianByFamily(results, f, fam));
+            }
+            data.put(shortName(f), row);
+        }
+        List<String> labels = families.stream().map(ChartGenerator::familyLabel).collect(Collectors.toList());
+        return groupedBarChart("Melhor desempenho por família de estratégia", "Amostra / Mundo Narrativo", "Melhor tempo mediano (ms)", data, labels);
+    }
+
+    // 15 — CPU parallel branch: manual threads, fork/join and parallel stream
+    private static BufferedImage chartCpuStrategyBranch(List<BenchmarkResult> results) {
+        List<String> files = orderedFiles(results);
+        List<String> methods = orderedMethods(results).stream()
+                .filter(m -> m.startsWith("ParallelCPU") || m.startsWith("ForkJoin") || m.startsWith("ParallelStream"))
+                .collect(Collectors.toList());
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String f : files) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            for (String m : methods) row.put(m, medianTime(results, f, m));
+            data.put(shortName(f), row);
+        }
+        return groupedBarChart("Vertente CPU paralela — estratégias", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, methods);
+    }
+
+    // 16 — Virtual threads branch: compare chunk granularities
+    private static BufferedImage chartVirtualThreadsBranch(List<BenchmarkResult> results) {
+        List<String> files = orderedFiles(results);
+        List<String> methods = orderedMethods(results).stream()
+                .filter(m -> m.startsWith("VirtualThreads"))
+                .collect(Collectors.toList());
+        if (methods.isEmpty()) {
+            Map<String, Map<String, Double>> empty = new LinkedHashMap<>();
+            empty.put("Sem dados", Map.of("VirtualThreads", 0.0));
+            return groupedBarChart("Vertente Virtual Threads", "Amostra", "Tempo mediano (ms)", empty, List.of("VirtualThreads"));
+        }
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String f : files) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            for (String m : methods) row.put(m, medianTime(results, f, m));
+            data.put(shortName(f), row);
+        }
+        return groupedBarChart("Vertente Virtual Threads — granularidade", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, methods);
+    }
+
+    // 17 — GPU branch compared with serial, best CPU and best virtual-thread strategy
+    private static BufferedImage chartGpuBranch(List<BenchmarkResult> results) {
+        List<String> files = orderedFiles(results);
+        String gpu = gpuLabel(results);
+        List<String> series = List.of("SerialCPU", "Melhor CPU paralela", "Melhor VirtualThreads", gpu);
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String f : files) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            row.put("SerialCPU", medianTime(results, f, "SerialCPU"));
+            row.put("Melhor CPU paralela", bestCpuStrategyMedian(results, f));
+            row.put("Melhor VirtualThreads", bestMedianByFamily(results, f, "VIRTUAL_THREADS"));
+            row.put(gpu, medianTime(results, f, gpu));
+            data.put(shortName(f), row);
+        }
+        return groupedBarChart("Vertente GPU/OpenCL vs melhores estratégias", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, series);
     }
 
     // ── Drawing helpers ────────────────────────────────────────────────────
@@ -615,9 +688,68 @@ public class ChartGenerator {
 
     private static int methodOrder(String method) {
         if (method.equals("SerialCPU")) return 0;
+        if (method.equals("SerialStream")) return 1;
         if (method.startsWith("ParallelCPU")) return 10 + extractThreadCount(method);
+        if (method.startsWith("ForkJoin")) return 80;
+        if (method.startsWith("ParallelStream")) return 90;
+        if (method.startsWith("VirtualThreads")) return 200 + extractChunkCount(method);
         if (method.startsWith("ParallelGPU")) return 10_000;
         return 20_000;
+    }
+
+    private static int extractChunkCount(String method) {
+        try {
+            int dash = method.indexOf('-');
+            int c = method.indexOf("chunks", dash);
+            if (dash >= 0 && c > dash) return Integer.parseInt(method.substring(dash + 1, c));
+        } catch (Exception ignored) {}
+        return 999;
+    }
+
+    private static List<String> orderedFamilies(List<BenchmarkResult> results) {
+        return results.stream().map(r -> r.family).distinct()
+                .sorted(Comparator.comparingInt(ChartGenerator::familyOrder))
+                .collect(Collectors.toList());
+    }
+
+    private static int familyOrder(String family) {
+        return switch (family) {
+            case "SERIAL" -> 0;
+            case "PARALLEL_CPU" -> 10;
+            case "PARALLEL_STREAM" -> 20;
+            case "VIRTUAL_THREADS" -> 30;
+            case "GPU_OPENCL" -> 40;
+            default -> 999;
+        };
+    }
+
+    private static String familyLabel(String family) {
+        return switch (family) {
+            case "SERIAL" -> "Serial";
+            case "PARALLEL_CPU" -> "CPU paralela";
+            case "PARALLEL_STREAM" -> "ParallelStream";
+            case "VIRTUAL_THREADS" -> "Virtual Threads";
+            case "GPU_OPENCL" -> "GPU/OpenCL";
+            default -> family;
+        };
+    }
+
+    private static double bestMedianByFamily(List<BenchmarkResult> results, String file, String family) {
+        return results.stream()
+                .filter(r -> r.file.equals(file) && r.family.equals(family))
+                .map(r -> r.method).distinct()
+                .mapToDouble(m -> medianTime(results, file, m))
+                .filter(v -> v > 0)
+                .min().orElse(0.0);
+    }
+
+    private static double bestCpuStrategyMedian(List<BenchmarkResult> results, String file) {
+        return results.stream()
+                .filter(r -> r.file.equals(file) && (r.family.equals("PARALLEL_CPU") || r.family.equals("PARALLEL_STREAM")))
+                .map(r -> r.method).distinct()
+                .mapToDouble(m -> medianTime(results, file, m))
+                .filter(v -> v > 0)
+                .min().orElse(0.0);
     }
 
     private static int extractThreadCount(String method) {

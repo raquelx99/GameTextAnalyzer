@@ -188,4 +188,19 @@ public class ParallelGPUCounter implements WordCounter {
     public String getName() {
         return fallbackMode ? "ParallelGPU-FallbackCPU" : "ParallelGPU";
     }
+
+    @Override
+    public StrategyFamily getFamily() {
+        return StrategyFamily.GPU_OPENCL;
+    }
+
+    @Override
+    public int getParallelism() {
+        return 0;
+    }
+
+    @Override
+    public boolean isRealGpu() {
+        return !fallbackMode;
+    }
 }

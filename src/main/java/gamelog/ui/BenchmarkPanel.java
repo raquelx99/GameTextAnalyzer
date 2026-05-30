@@ -3,6 +3,8 @@ package gamelog.ui;
 import gamelog.SampleConfig;
 import gamelog.benchmark.*;
 import gamelog.utils.FileUtils;
+import gamelog.counters.WordCounter;
+import gamelog.counters.StrategyRegistry;
 import gamelog.ui.MainWindow;
 
 import javax.swing.*;
@@ -24,7 +26,7 @@ public class BenchmarkPanel extends JPanel {
     // ── Controls ─────────────────────────────────────────────────────────────
     private JComboBox<String> fileCombo;
     private JTextField        eventField;
-    private JCheckBox         chkSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN, chkGpu;
+    private JCheckBox         chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN, chkForkJoin, chkParallelStream, chkVirtual50, chkVirtual100, chkGpu;
     private JCheckBox         chkFullBench;
     private JButton           btnRun;
     private JProgressBar      progress;
@@ -48,8 +50,8 @@ public class BenchmarkPanel extends JPanel {
         header.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, MainWindow.BORDER_COL),
                 BorderFactory.createEmptyBorder(18, 28, 18, 28)));
-        header.add(MainWindow.sectionTitle("⚡  Benchmark Oficial"), BorderLayout.WEST);
-        header.add(MainWindow.subLabel("Compara SerialCPU, ParallelCPU e ParallelGPU nas amostras literárias obrigatórias"), BorderLayout.CENTER);
+        header.add(MainWindow.sectionTitle("⚡  Benchmark Modular"), BorderLayout.WEST);
+        header.add(MainWindow.subLabel("Compara estratégias seriais, CPU paralela, streams, virtual threads e GPU/OpenCL"), BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
         // ── Split: config left / output right ────────────────────────────
@@ -118,19 +120,31 @@ public class BenchmarkPanel extends JPanel {
         p.add(Box.createVerticalStrut(16));
 
         // Methods
-        p.add(fieldLabel("Métodos a comparar"));
+        p.add(fieldLabel("Estratégias a comparar"));
         p.add(Box.createVerticalStrut(6));
-        chkSerial = styledCheck("SerialCPU",          true);
-        chkCpu2   = styledCheck("ParallelCPU  2 threads", true);
-        chkCpu4   = styledCheck("ParallelCPU  4 threads", true);
-        chkCpu8   = styledCheck("ParallelCPU  8 threads", true);
-        chkCpuN   = styledCheck("ParallelCPU  " + BenchmarkRunner.CPU_CORES + " threads  (esta máquina)", true);
-        chkGpu    = styledCheck("ParallelGPU  (OpenCL)",  true);
-        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkCpuN,chkGpu}) {
-            cb.setEnabled(false);
+        chkSerial         = styledCheck("SerialCPU  (loop simples)", true);
+        chkStreamSerial   = styledCheck("SerialStream  (stream sequencial)", true);
+        chkCpu2           = styledCheck("ParallelCPU  2 threads", true);
+        chkCpu4           = styledCheck("ParallelCPU  4 threads", true);
+        chkCpu8           = styledCheck("ParallelCPU  8 threads", true);
+        chkCpuN           = styledCheck("ParallelCPU  " + BenchmarkRunner.CPU_CORES + " threads  (esta máquina)", true);
+        chkForkJoin       = styledCheck("ForkJoinCPU  (divide-and-conquer)", true);
+        chkParallelStream = styledCheck("ParallelStream  (ForkJoin comum)", true);
+        chkVirtual50      = styledCheck("VirtualThreads  50 chunks", true);
+        chkVirtual100     = styledCheck("VirtualThreads  100 chunks", true);
+        chkGpu            = styledCheck("ParallelGPU  (OpenCL/fallback)", true);
+        for (JCheckBox cb : allStrategyChecks()) {
+            cb.setEnabled(true);
             p.add(cb);
             p.add(Box.createVerticalStrut(2));
         }
+
+        JLabel vtHint = new JLabel("Virtual Threads exigem Java 21+. São úteis para comparar overhead em tarefa CPU-bound.");
+        vtHint.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        vtHint.setForeground(MainWindow.TEXT_DIM);
+        vtHint.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(Box.createVerticalStrut(6));
+        p.add(vtHint);
 
         p.add(Box.createVerticalGlue());
 
@@ -243,16 +257,21 @@ public class BenchmarkPanel extends JPanel {
                 ensureOfficialSamplesExist();
                 BenchmarkRunner runner = new BenchmarkRunner();
                 List<BenchmarkResult> allResults = new java.util.ArrayList<>();
+                List<WordCounter> selectedStrategies = selectedStrategies();
+
+                if (selectedStrategies.isEmpty()) {
+                    throw new IllegalStateException("Selecione pelo menos uma estratégia de benchmark.");
+                }
 
                 if (fullBench) {
                     new File(MainWindow.CSV_PATH).delete();
                     for (String[] entry : SampleConfig.officialBenchmarkEntries()) {
-                        List<BenchmarkResult> r = runner.run(entry[0], entry[1]);
+                        List<BenchmarkResult> r = runner.run(entry[0], entry[1], selectedStrategies);
                         allResults.addAll(r);
                         CsvWriter.write(MainWindow.CSV_PATH, r, true);
                     }
                 } else {
-                    List<BenchmarkResult> r = runner.run(filePath, event);
+                    List<BenchmarkResult> r = runner.run(filePath, event, selectedStrategies);
                     allResults.addAll(r);
                     CsvWriter.write(MainWindow.CSV_PATH, r, true);
                 }
@@ -300,8 +319,8 @@ public class BenchmarkPanel extends JPanel {
         boolean full = chkFullBench.isSelected();
         fileCombo.setEnabled(!full);
         eventField.setEnabled(!full);
-        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkCpuN,chkGpu}) {
-            cb.setEnabled(!full);
+        for (JCheckBox cb : allStrategyChecks()) {
+            cb.setEnabled(true);
         }
     }
 
@@ -316,6 +335,29 @@ public class BenchmarkPanel extends JPanel {
             }
         }
         if (fileCombo.getItemCount() == 0) fileCombo.addItem("(nenhuma amostra encontrada)");
+    }
+
+    private JCheckBox[] allStrategyChecks() {
+        return new JCheckBox[]{
+                chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN,
+                chkForkJoin, chkParallelStream, chkVirtual50, chkVirtual100, chkGpu
+        };
+    }
+
+    private List<WordCounter> selectedStrategies() {
+        List<WordCounter> strategies = new java.util.ArrayList<>();
+        if (chkSerial != null && chkSerial.isSelected()) strategies.add(new gamelog.counters.SerialCPUCounter());
+        if (chkStreamSerial != null && chkStreamSerial.isSelected()) strategies.add(new gamelog.counters.SerialStreamCounter());
+        if (chkCpu2 != null && chkCpu2.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(2));
+        if (chkCpu4 != null && chkCpu4.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(4));
+        if (chkCpu8 != null && chkCpu8.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(8));
+        if (chkCpuN != null && chkCpuN.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(BenchmarkRunner.CPU_CORES));
+        if (chkForkJoin != null && chkForkJoin.isSelected()) strategies.add(new gamelog.counters.ForkJoinCPUCounter());
+        if (chkParallelStream != null && chkParallelStream.isSelected()) strategies.add(new gamelog.counters.ParallelStreamCounter());
+        if (chkVirtual50 != null && chkVirtual50.isSelected()) strategies.add(new gamelog.counters.VirtualThreadCounter(50));
+        if (chkVirtual100 != null && chkVirtual100.isSelected()) strategies.add(new gamelog.counters.VirtualThreadCounter(100));
+        if (chkGpu != null && chkGpu.isSelected()) strategies.add(new gamelog.counters.ParallelGPUCounter());
+        return strategies;
     }
 
     // ── Style helpers ─────────────────────────────────────────────────────────

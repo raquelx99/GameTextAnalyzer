@@ -30,7 +30,7 @@ public class HomePanel extends JPanel {
         title.setFont(Theme.FONT_TITLE);
         title.setForeground(Theme.TEXT_PRI);
 
-        JLabel desc = Theme.muted("Benchmark paralelo de palavras em textos literários · SerialCPU · ParallelCPU · ParallelGPU");
+        JLabel desc = Theme.muted("Benchmark modular de palavras em textos literários · Serial · CPU · Virtual Threads · GPU");
         hero.add(title, BorderLayout.NORTH);
         hero.add(desc,  BorderLayout.CENTER);
         scroll.add(hero);
@@ -142,7 +142,7 @@ public class HomePanel extends JPanel {
         grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         grid.add(feature("Mundos narrativos", "Cada amostra obrigatória é interpretada como uma proposta de adaptação: RPG, horror e aventura naval.", Theme.ACCENT));
         grid.add(feature("Comparação normalizada", "O comparador usa ocorrências por 10 mil palavras para equilibrar textos de tamanhos diferentes.", Theme.GREEN));
-        grid.add(feature("Entrega acadêmica", "Mantém CSV, gráficos, README e as medições SerialCPU, ParallelCPU e ParallelGPU.", Theme.ORANGE));
+        grid.add(feature("Entrega acadêmica", "Mantém CSV, gráficos, README e medições por famílias de estratégias de paralelização.", Theme.ORANGE));
         return grid;
     }
 

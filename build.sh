@@ -22,7 +22,7 @@ fi
 echo ""
 echo "  Compiling sources..."
 mkdir -p "$OUT_DIR"
-find "$SRC_DIR" -name "*.java" | xargs javac --source 17 --target 17 -d "$OUT_DIR" -cp "$CP"
+find "$SRC_DIR" -name "*.java" | xargs javac --release 21 -d "$OUT_DIR" -cp "$CP"
 echo "  ✓ Compilation successful"
 
 # ── Run ───────────────────────────────────────────────────────────────────────

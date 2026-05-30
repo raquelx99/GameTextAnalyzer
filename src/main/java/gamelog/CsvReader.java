@@ -8,36 +8,61 @@ import java.util.List;
 
 /**
  * Reads benchmark results from an existing CSV file.
+ * Supports both the current modular format and the previous CSV layout.
  */
 public class CsvReader {
 
     public static List<BenchmarkResult> read(String path) throws IOException {
         List<BenchmarkResult> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-            String header = br.readLine(); // skip header
+            String header = br.readLine();
             if (header == null) return list;
+            boolean modular = header.contains("strategy_id") && header.contains("family");
+
             String line;
             while ((line = br.readLine()) != null) {
                 String[] cols = line.split(",");
-                if (cols.length < 9) continue;
                 try {
-                    String file     = cols[0].trim();
-                    String logType  = cols[1].trim();
-                    int    total    = Integer.parseInt(cols[2].trim());
-                    String event    = cols[3].trim();
-                    String method   = cols[4].trim();
-                    int    threads  = parseThreads(cols[5].trim());
-                    int    run      = Integer.parseInt(cols[6].trim());
-                    long   occ      = Long.parseLong(cols[7].trim());
-                    double timeMs   = Double.parseDouble(cols[8].trim());
+                    if (modular) {
+                        if (cols.length < 11) continue;
+                        String file       = cols[0].trim();
+                        String world      = cols[1].trim();
+                        int total         = Integer.parseInt(cols[2].trim());
+                        String word       = cols[3].trim();
+                        String strategyId = cols[4].trim();
+                        String method     = cols[5].trim();
+                        String family     = cols[6].trim();
+                        int parallelism   = parseInt(cols[7].trim(), 1);
+                        int run           = Integer.parseInt(cols[8].trim());
+                        long occ          = Long.parseLong(cols[9].trim());
+                        double timeMs     = Double.parseDouble(cols[10].trim());
+                        boolean realGpu   = cols.length > 14 && Boolean.parseBoolean(cols[14].trim());
 
-                    BenchmarkResult r = new BenchmarkResult(file, logType, total, event,
-                                                            method, threads, run, occ, timeMs);
-                    if (cols.length > 9) r.speedup    = Double.parseDouble(cols[9].trim());
-                    if (cols.length > 10) r.efficiency = Double.parseDouble(cols[10].trim());
-                    if (cols.length > 11) r.wordsPerMs = Double.parseDouble(cols[11].trim());
-                    list.add(r);
-                } catch (NumberFormatException ignored) {
+                        BenchmarkResult r = new BenchmarkResult(file, world, total, word, strategyId, method,
+                                family, parallelism, run, occ, timeMs, realGpu);
+                        if (cols.length > 11) r.speedup    = parseDouble(cols[11].trim(), r.speedup);
+                        if (cols.length > 12) r.efficiency = parseDouble(cols[12].trim(), r.efficiency);
+                        if (cols.length > 13) r.wordsPerMs = parseDouble(cols[13].trim(), r.wordsPerMs);
+                        list.add(r);
+                    } else {
+                        if (cols.length < 9) continue;
+                        String file     = cols[0].trim();
+                        String world    = cols[1].trim();
+                        int total       = Integer.parseInt(cols[2].trim());
+                        String word     = cols[3].trim();
+                        String method   = cols[4].trim();
+                        int threads     = parseInt(cols[5].trim(), 1);
+                        int run         = Integer.parseInt(cols[6].trim());
+                        long occ        = Long.parseLong(cols[7].trim());
+                        double timeMs   = Double.parseDouble(cols[8].trim());
+
+                        BenchmarkResult r = new BenchmarkResult(file, world, total, word, method, threads, run, occ, timeMs);
+                        if (cols.length > 9) r.speedup    = parseDouble(cols[9].trim(), r.speedup);
+                        if (cols.length > 10) r.efficiency = parseDouble(cols[10].trim(), r.efficiency);
+                        if (cols.length > 11) r.wordsPerMs = parseDouble(cols[11].trim(), r.wordsPerMs);
+                        list.add(r);
+                    }
+                } catch (RuntimeException ignored) {
                     // skip malformed rows
                 }
             }
@@ -45,7 +70,11 @@ public class CsvReader {
         return list;
     }
 
-    private static int parseThreads(String s) {
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 1; }
+    private static int parseInt(String s, int fallback) {
+        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return fallback; }
+    }
+
+    private static double parseDouble(String s, double fallback) {
+        try { return Double.parseDouble(s); } catch (NumberFormatException e) { return fallback; }
     }
 }

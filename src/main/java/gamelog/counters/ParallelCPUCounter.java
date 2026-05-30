@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Parallel CPU counter — splits the lines array across N threads,
+ * Parallel CPU counter — splits the token array across N platform threads,
  * counts in parallel, then sums partial results.
  */
 public class ParallelCPUCounter implements WordCounter {
@@ -13,7 +13,7 @@ public class ParallelCPUCounter implements WordCounter {
     private final int threadCount;
 
     public ParallelCPUCounter(int threadCount) {
-        this.threadCount = threadCount;
+        this.threadCount = Math.max(1, threadCount);
     }
 
     @Override
@@ -44,8 +44,10 @@ public class ParallelCPUCounter implements WordCounter {
         for (Future<Long> f : futures) {
             try {
                 total += f.get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while counting with fixed thread pool", e);
+            } catch (ExecutionException e) {
                 throw new RuntimeException("Error in parallel count", e);
             }
         }
@@ -55,6 +57,16 @@ public class ParallelCPUCounter implements WordCounter {
     @Override
     public String getName() {
         return "ParallelCPU-" + threadCount + "t";
+    }
+
+    @Override
+    public StrategyFamily getFamily() {
+        return StrategyFamily.PARALLEL_CPU;
+    }
+
+    @Override
+    public int getParallelism() {
+        return threadCount;
     }
 
     public int getThreadCount() {

@@ -13,8 +13,8 @@ import java.util.List;
 public class ResultTablePanel extends JPanel {
 
     private static final String[] COLS = {
-        "Arquivo", "Tipo", "Método", "Threads", "Run",
-        "Ocorrências", "Tempo (ms)", "Speedup", "Efic.", "Palavras/ms"
+        "Arquivo", "Tipo", "Família", "Método", "Paral.", "Run",
+        "Ocorrências", "Tempo (ms)", "Speedup", "Efic.", "Palavras/ms", "GPU real"
     };
 
     private final DefaultTableModel model;
@@ -36,7 +36,6 @@ public class ResultTablePanel extends JPanel {
         scroll.setBackground(MainWindow.BG_CARD);
         add(scroll, BorderLayout.CENTER);
 
-        // Summary label at bottom
         JLabel hint = new JLabel("  Resultados aparecem após a execução do benchmark.");
         hint.setForeground(MainWindow.TEXT_DIM);
         hint.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -50,6 +49,7 @@ public class ResultTablePanel extends JPanel {
             model.addRow(new Object[]{
                 r.file,
                 r.logType,
+                r.family,
                 r.method,
                 r.threads,
                 r.run,
@@ -57,7 +57,8 @@ public class ResultTablePanel extends JPanel {
                 String.format(java.util.Locale.US, "%.4f", r.timeMs),
                 String.format(java.util.Locale.US, "%.3f", r.speedup),
                 String.format(java.util.Locale.US, "%.3f", r.efficiency),
-                String.format(java.util.Locale.US, "%.0f", r.wordsPerMs)
+                String.format(java.util.Locale.US, "%.0f", r.wordsPerMs),
+                r.realGpu ? "sim" : "não"
             });
         }
     }
@@ -82,7 +83,6 @@ public class ResultTablePanel extends JPanel {
         header.setFont(new Font("SansSerif", Font.BOLD, 11));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, MainWindow.BORDER_COL));
 
-        // Alternating row renderer
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object val,
@@ -97,8 +97,7 @@ public class ResultTablePanel extends JPanel {
             }
         });
 
-        // Column widths
-        int[] widths = {160, 80, 160, 60, 40, 100, 90, 70, 60, 100};
+        int[] widths = {150, 95, 120, 190, 55, 40, 100, 90, 70, 60, 100, 70};
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }

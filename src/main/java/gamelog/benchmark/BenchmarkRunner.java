@@ -8,39 +8,36 @@ import java.io.File;
 import java.util.*;
 
 /**
- * Orchestrates benchmark runs across all counters, files, and events.
+ * Orchestrates benchmark runs across all strategies, files, and searched words.
  *
  * Strategy:
- *  1. Warm up the JVM with one discarded run per counter.
- *  2. Run each counter {@code RUNS} times, collecting timed results.
- *  3. Compute speedup/efficiency relative to the SerialCPU median.
+ *  1. Load/tokenize the text once.
+ *  2. Warm up the JVM with one discarded run per strategy.
+ *  3. Run each strategy {@code RUNS} times, collecting timed results.
+ *  4. Compute speedup/efficiency relative to the SerialCPU median.
  */
 public class BenchmarkRunner {
 
     /** Number of timed runs per method (warmup run is separate and discarded). */
     public static final int RUNS = 3;
 
-    /** Threads available on the current machine, used for the dynamic counter. */
-    public static final int CPU_CORES = Runtime.getRuntime().availableProcessors();
+    /** Workers available on the current machine, used for dynamic strategies. */
+    public static final int CPU_CORES = StrategyRegistry.CPU_CORES;
 
-    /** Counters used in the benchmark (in display order). */
-    private static final List<WordCounter> COUNTERS = List.of(
-            new SerialCPUCounter(),
-            new ParallelCPUCounter(2),
-            new ParallelCPUCounter(4),
-            new ParallelCPUCounter(8),
-            new ParallelCPUCounter(CPU_CORES),
-            new ParallelGPUCounter()
-    );
+    /** Strategies used in the benchmark (in display order). */
+    private static final List<WordCounter> COUNTERS = Collections.unmodifiableList(StrategyRegistry.defaultStrategies());
 
-    /**
-     * Runs the full benchmark for one log file / event combination.
-     *
-     * @param filePath     path to the .txt log file
-     * @param eventToCount event name to search for
-     * @return list of all {@link BenchmarkResult} from this run
-     */
+    public static List<WordCounter> defaultCounters() {
+        return COUNTERS;
+    }
+
+    /** Runs the full benchmark for one text file / word combination. */
     public List<BenchmarkResult> run(String filePath, String eventToCount) {
+        return run(filePath, eventToCount, COUNTERS);
+    }
+
+    /** Runs a benchmark using a custom list of strategies. */
+    public List<BenchmarkResult> run(String filePath, String eventToCount, List<WordCounter> counters) {
         eventToCount = FileUtils.normalizeQuery(eventToCount);
         if (eventToCount.isEmpty()) {
             System.err.println("Search word is empty after normalization.");
@@ -53,6 +50,11 @@ public class BenchmarkRunner {
             return Collections.emptyList();
         }
 
+        if (counters == null || counters.isEmpty()) {
+            System.err.println("No benchmark strategies selected.");
+            return Collections.emptyList();
+        }
+
         System.out.println("\n==============================================");
         SampleConfig sample = SampleConfig.findByFileName(file.getName());
         if (sample != null) {
@@ -61,9 +63,9 @@ public class BenchmarkRunner {
         }
         System.out.printf(" File  : %s%n", file.getName());
         System.out.printf(" Word  : %s%n", eventToCount);
+        System.out.printf(" Strategies: %d%n", counters.size());
         System.out.println("==============================================");
 
-        // Load lines once — shared across all counters
         String[] lines;
         try {
             lines = FileUtils.readLines(filePath);
@@ -73,66 +75,72 @@ public class BenchmarkRunner {
         }
 
         String logType = deriveLogType(file.getName());
-        int    total   = lines.length;
+        int total = lines.length;
 
-        // ── JVM Warmup ───────────────────────────────────────────────────────
-        System.out.println("  [warmup] running one discarded pass per counter...");
-        for (WordCounter counter : COUNTERS) {
-            counter.count(lines, eventToCount); // result discarded
+        System.out.println("  [warmup] running one discarded pass per strategy...");
+        for (WordCounter counter : counters) {
+            counter.count(lines, eventToCount);
         }
 
-        // ── Timed runs ───────────────────────────────────────────────────────
         List<BenchmarkResult> results = new ArrayList<>();
-        double serialMedianMs = 1.0; // placeholder, updated below
+        double serialMedianMs = 1.0;
 
-        for (WordCounter counter : COUNTERS) {
+        for (WordCounter counter : counters) {
             List<Double> times = new ArrayList<>();
+            String methodName = counter.getName();
 
             for (int run = 1; run <= RUNS; run++) {
-                long t0   = System.nanoTime();
-                long occ  = counter.count(lines, eventToCount);
-                double elap = (System.nanoTime() - t0) / 1_000_000.0;
-                times.add(elap);
+                long t0 = System.nanoTime();
+                long occ = counter.count(lines, eventToCount);
+                double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;
+                times.add(elapsedMs);
 
-                int threadCount = (counter instanceof ParallelCPUCounter pcc)
-                                  ? pcc.getThreadCount() : 1;
+                methodName = counter.getName(); // GPU fallback may update the visible name after count()
 
                 BenchmarkResult r = new BenchmarkResult(
-                        file.getName(), logType, total, eventToCount,
-                        counter.getName(), threadCount, run, occ, elap);
+                        file.getName(),
+                        logType,
+                        total,
+                        eventToCount,
+                        counter.getId(),
+                        methodName,
+                        counter.getFamily().name(),
+                        counter.getParallelism(),
+                        run,
+                        occ,
+                        elapsedMs,
+                        counter.isRealGpu()
+                );
                 results.add(r);
             }
 
-            // Update serial baseline after SerialCPU runs
-            if (counter instanceof SerialCPUCounter) {
+            if (methodName.equals("SerialCPU")) {
                 serialMedianMs = Math.max(0.0001, median(times));
             }
 
-            // Print summary line for this counter
             double med = median(times);
-            System.out.printf(java.util.Locale.US, "  %-24s  median=%9.4f ms   runs=%s%n",
-                    counter.getName(), med, times);
+            System.out.printf(java.util.Locale.US, "  %-28s  %-16s median=%9.4f ms   runs=%s%n",
+                    methodName, counter.getFamily().name(), med, times);
         }
 
-        // ── Compute derived metrics ──────────────────────────────────────────
         for (BenchmarkResult r : results) {
-            double t   = Math.max(0.0001, r.timeMs);
+            double t = Math.max(0.0001, r.timeMs);
             double spd = serialMedianMs / t;
-            int    thr = r.threads > 0 ? r.threads : 1;
-            r.speedup     = spd;
-            r.efficiency  = (r.method.startsWith("ParallelCPU")) ? spd / thr : spd;
+            int p = r.threads > 0 ? r.threads : 1;
+            r.speedup = spd;
+            if (r.family.equals(StrategyFamily.PARALLEL_CPU.name()) || r.family.equals(StrategyFamily.VIRTUAL_THREADS.name())) {
+                r.efficiency = spd / p;
+            } else {
+                r.efficiency = spd;
+            }
             r.wordsPerMs = (double) total / t;
         }
 
-        // ── Print ranking ────────────────────────────────────────────────────
         printRanking(results, file.getName(), eventToCount);
-
         return results;
     }
 
-    /** Prints a medal-style ranking table for one file run. */
     private void printRanking(List<BenchmarkResult> results, String fileName, String event) {
-        // Median time per method
         Map<String, Double> medians = new LinkedHashMap<>();
         Map<String, List<Double>> grouped = new LinkedHashMap<>();
         for (BenchmarkResult r : results) {
@@ -143,17 +151,15 @@ public class BenchmarkRunner {
         List<Map.Entry<String, Double>> sorted = new ArrayList<>(medians.entrySet());
         sorted.sort(Map.Entry.comparingByValue());
 
-        String[] medals = {"1)", "2)", "3)", "4)", "5)", "6)"};
         System.out.printf("%n  -- Ranking: %s / palavra '%s' --%n", fileName, event);
         for (int i = 0; i < sorted.size(); i++) {
-            System.out.printf(java.util.Locale.US, "  %s %-24s  %9.4f ms%n",
-                    medals[Math.min(i, medals.length - 1)],
+            System.out.printf(java.util.Locale.US, "  %2d) %-28s  %9.4f ms%n",
+                    i + 1,
                     sorted.get(i).getKey(),
                     sorted.get(i).getValue());
         }
     }
 
-    /** Returns the median value from a list of longs. */
     private static double median(List<Double> values) {
         List<Double> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
@@ -162,16 +168,9 @@ public class BenchmarkRunner {
         return n % 2 == 1 ? sorted.get(n / 2) : (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
     }
 
-    /** Derives a human-readable dataset/game-world type from the file name. */
     private static String deriveLogType(String name) {
         SampleConfig sample = SampleConfig.findByFileName(name);
         if (sample != null) return sample.gameWorld;
-
-        String lower = name.toLowerCase();
-        if (lower.contains("tutorial"))   return "tutorial-extra";
-        if (lower.contains("explor"))     return "exploration-extra";
-        if (lower.contains("combat"))     return "combat-extra";
-        if (lower.contains("boss"))       return "bossfight-extra";
         return "generic";
     }
 }

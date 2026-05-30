@@ -1,7 +1,7 @@
 package gamelog.counters;
 
 /**
- * Serial CPU counter — iterates over every line with a simple loop.
+ * Serial CPU counter — iterates over every token with a simple loop.
  * Baseline for speedup calculations.
  */
 public class SerialCPUCounter implements WordCounter {
@@ -20,5 +20,10 @@ public class SerialCPUCounter implements WordCounter {
     @Override
     public String getName() {
         return "SerialCPU";
+    }
+
+    @Override
+    public StrategyFamily getFamily() {
+        return StrategyFamily.SERIAL;
     }
 }

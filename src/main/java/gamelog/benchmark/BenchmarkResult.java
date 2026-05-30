@@ -1,5 +1,7 @@
 package gamelog.benchmark;
 
+import gamelog.counters.StrategyFamily;
+
 /**
  * Holds the result of a single benchmark run.
  */
@@ -9,48 +11,78 @@ public class BenchmarkResult {
     public final String  logType;
     public final int     totalWords;
     public final String  wordSearched;
+    public final String  strategyId;
     public final String  method;
+    public final String  family;
     public final int     threads;
     public final int     run;
     public final long    occurrences;
     public final double  timeMs;
+    public final boolean realGpu;
 
     // Derived metrics (set after all Serial results are known)
     public double speedup         = 1.0;
     public double efficiency      = 1.0;
-    public double wordsPerMs     = 0.0;
+    public double wordsPerMs      = 0.0;
 
     public BenchmarkResult(String file, String logType, int totalWords,
-                           String wordSearched, String method, int threads,
-                           int run, long occurrences, double timeMs) {
+                           String wordSearched, String strategyId, String method,
+                           String family, int threads, int run, long occurrences,
+                           double timeMs, boolean realGpu) {
         this.file          = file;
         this.logType       = logType;
-        this.totalWords   = totalWords;
-        this.wordSearched = wordSearched;
+        this.totalWords    = totalWords;
+        this.wordSearched  = wordSearched;
+        this.strategyId    = strategyId;
         this.method        = method;
+        this.family        = family;
         this.threads       = threads;
         this.run           = run;
         this.occurrences   = occurrences;
         this.timeMs        = timeMs;
-        this.wordsPerMs   = timeMs > 0 ? (double) totalWords / timeMs : 0;
+        this.realGpu       = realGpu;
+        this.wordsPerMs    = timeMs > 0 ? (double) totalWords / timeMs : 0;
+    }
+
+    /** Backward-compatible constructor used by older CSV readers/code paths. */
+    public BenchmarkResult(String file, String logType, int totalWords,
+                           String wordSearched, String method, int threads,
+                           int run, long occurrences, double timeMs) {
+        this(file, logType, totalWords, wordSearched,
+                inferId(method), method, inferFamily(method), threads, run,
+                occurrences, timeMs, method.equals("ParallelGPU"));
     }
 
     /** CSV header row. */
     public static String csvHeader() {
-        return "file,world,total_words,word_searched,method,threads,run," +
-               "occurrences,time_ms,speedup,efficiency,words_per_ms";
+        return "file,world,total_words,word_searched,strategy_id,method,family,parallelism,run," +
+               "occurrences,time_ms,speedup,efficiency,words_per_ms,is_real_gpu";
     }
 
     /** Returns this result as a CSV row. */
     public String toCsvRow() {
-        return String.format(java.util.Locale.US, "%s,%s,%d,%s,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.2f",
-                file, logType, totalWords, wordSearched, method, threads, run,
-                occurrences, timeMs, speedup, efficiency, wordsPerMs);
+        return String.format(java.util.Locale.US,
+                "%s,%s,%d,%s,%s,%s,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.2f,%s",
+                file, logType, totalWords, wordSearched, strategyId, method, family, threads, run,
+                occurrences, timeMs, speedup, efficiency, wordsPerMs, realGpu);
     }
 
     @Override
     public String toString() {
-        return String.format(java.util.Locale.US, "%-24s %,7d ocorrências em %8.4f ms  (speedup=%.2fx)",
+        return String.format(java.util.Locale.US, "%-28s %,7d ocorrências em %8.4f ms  (speedup=%.2fx)",
                 method + ":", occurrences, timeMs, speedup);
+    }
+
+    public static String inferId(String method) {
+        return method.toLowerCase().replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
+    }
+
+    public static String inferFamily(String method) {
+        if (method.equals("SerialCPU") || method.equals("SerialStream")) return StrategyFamily.SERIAL.name();
+        if (method.startsWith("ParallelCPU") || method.startsWith("ForkJoin")) return StrategyFamily.PARALLEL_CPU.name();
+        if (method.startsWith("ParallelStream")) return StrategyFamily.PARALLEL_STREAM.name();
+        if (method.startsWith("VirtualThreads")) return StrategyFamily.VIRTUAL_THREADS.name();
+        if (method.startsWith("ParallelGPU")) return StrategyFamily.GPU_OPENCL.name();
+        return "OTHER";
     }
 }
