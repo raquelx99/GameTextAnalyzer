@@ -1,6 +1,7 @@
 package gamelog;
 
 import gamelog.benchmark.*;
+import gamelog.counters.*;
 import gamelog.ui.ChartGenerator;
 import gamelog.ui.MainWindow;
 
@@ -105,7 +106,9 @@ public class Main {
         System.out.print("  Palavra a buscar: ");
         String event = gamelog.utils.FileUtils.normalizeQuery(sc.nextLine().trim());
         BenchmarkRunner runner = new BenchmarkRunner();
-        List<BenchmarkResult> r = runner.run(files[idx].getAbsolutePath(), event);
+        List<WordCounter> strategies = gamelog.counters.StrategyRegistry.defaultStrategies();
+        List<BenchmarkResult> r = runner.run(files[idx].getAbsolutePath(), event, strategies);
+        runner.releaseCounters(strategies);
         CsvWriter.write(CSV_PATH, r, true);
         System.out.print("  Gerar graficos? (s/n): ");
         if (sc.nextLine().trim().equalsIgnoreCase("s")) ChartGenerator.generateAll(r, CHARTS_DIR);

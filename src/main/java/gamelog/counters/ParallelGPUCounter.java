@@ -4,60 +4,134 @@ import org.jocl.*;
 import static org.jocl.CL.*;
 
 /**
- * Parallel GPU counter using OpenCL via JOCL 2.0.4.
+ * Parallel GPU counter via OpenCL (JOCL 2.0.4).
  *
- * Falls back to a parallel CPU stream if JOCL's native library cannot be
- * loaded or if no OpenCL platform/device is available on the machine.
+ * CORREÇÃO PRINCIPAL — cache de contexto OpenCL.
+ *   A versão original criava contexto, fila de comandos, programa e kernel
+ *   do zero a cada chamada a count(). Para textos de ~200–400k palavras,
+ *   esse setup OpenCL demorava mais que a contagem em si (10–30 ms só de
+ *   inicialização contra ~1–2 ms de contagem paralela real).
+ *
+ *   A correção inicializa tudo UMA vez no construtor (init()) e reutiliza
+ *   em todas as chamadas. Apenas os buffers de dados são realocados por
+ *   chamada, pois dependem do tamanho do texto e da palavra.
+ *
+ * Fallback: se JOCL não estiver disponível ou não houver dispositivo OpenCL,
+ * usa parallel stream automaticamente e registra o motivo.
  */
 public class ParallelGPUCounter implements WordCounter {
 
-    private static final boolean JOCL_AVAILABLE = checkJocl();
-    private boolean fallbackMode = !JOCL_AVAILABLE;
-
-    /** OpenCL kernel: each work-item checks one line against the target word. */
-    private static final String KERNEL_SOURCE =
-        "__kernel void countEvent(\n" +
-        "    __global const char* text,\n" +
-        "    __global const int*  lineOffsets,\n" +
-        "    __global const int*  lineLengths,\n" +
-        "    __global const char* target,\n" +
-        "    const int targetLen,\n" +
-        "    const int totalLines,\n" +
-        "    __global int* results)\n" +
-        "{\n" +
-        "    int gid = get_global_id(0);\n" +
-        "    if (gid >= totalLines) return;\n" +
-        "    int len = lineLengths[gid];\n" +
-        "    if (len != targetLen) { results[gid] = 0; return; }\n" +
-        "    int offset = lineOffsets[gid];\n" +
-        "    for (int i = 0; i < len; i++) {\n" +
-        "        if (text[offset + i] != target[i]) { results[gid] = 0; return; }\n" +
-        "    }\n" +
-        "    results[gid] = 1;\n" +
+    /** Kernel OpenCL: cada work-item verifica uma linha contra a palavra-alvo. */
+    private static final String KERNEL_SRC =
+        "__kernel void countWords(\n"                                    +
+        "    __global const char* text,\n"                              +
+        "    __global const int*  offsets,\n"                           +
+        "    __global const int*  lengths,\n"                           +
+        "    __global const char* target,\n"                            +
+        "    const int targetLen,\n"                                    +
+        "    const int totalLines,\n"                                   +
+        "    __global int* results)\n"                                  +
+        "{\n"                                                           +
+        "    int gid = get_global_id(0);\n"                            +
+        "    if (gid >= totalLines) { return; }\n"                     +
+        "    int len = lengths[gid];\n"                                +
+        "    if (len != targetLen) { results[gid] = 0; return; }\n"   +
+        "    int off = offsets[gid];\n"                                +
+        "    for (int i = 0; i < len; i++) {\n"                       +
+        "        if (text[off+i] != target[i]) { results[gid]=0; return; }\n" +
+        "    }\n"                                                       +
+        "    results[gid] = 1;\n"                                      +
         "}\n";
+
+    // ── Estado OpenCL (inicializado uma vez, reutilizado) ─────────────────
+    private boolean       fallbackMode;
+    private cl_context    context;
+    private cl_command_queue queue;
+    private cl_program    program;
+    private cl_kernel     kernel;
+    private boolean       gpuDevice; // true = GPU real, false = CPU OpenCL
+
+    public ParallelGPUCounter() {
+        this.fallbackMode = !tryInit();
+    }
+
+    /**
+     * Inicializa contexto, fila, programa e kernel uma única vez.
+     * Retorna false se qualquer etapa falhar — o caller ativa o fallback.
+     */
+    private boolean tryInit() {
+        try {
+            setExceptionsEnabled(false);
+
+            // Descoberta de plataforma
+            int[] nPlatforms = new int[1];
+            if (clGetPlatformIDs(0, null, nPlatforms) != CL_SUCCESS || nPlatforms[0] == 0)
+                return fail("Nenhuma plataforma OpenCL encontrada");
+            cl_platform_id[] platforms = new cl_platform_id[nPlatforms[0]];
+            clGetPlatformIDs(platforms.length, platforms, null);
+
+            // Prefere GPU; aceita CPU como fallback OpenCL
+            int[] nDevices = new int[1];
+            long devType = CL_DEVICE_TYPE_GPU;
+            if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 0, null, nDevices) != CL_SUCCESS
+                    || nDevices[0] == 0) {
+                if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_CPU, 0, null, nDevices) != CL_SUCCESS
+                        || nDevices[0] == 0)
+                    return fail("Nenhum dispositivo OpenCL encontrado");
+                devType = CL_DEVICE_TYPE_CPU;
+            }
+            gpuDevice = (devType == CL_DEVICE_TYPE_GPU);
+
+            cl_device_id[] devices = new cl_device_id[nDevices[0]];
+            clGetDeviceIDs(platforms[0], devType, devices.length, devices, null);
+            setExceptionsEnabled(true);
+
+            // Contexto e fila de comandos — criados uma vez
+            int[] err = new int[1];
+            context = clCreateContext(null, 1, devices, null, null, err);
+            queue   = clCreateCommandQueueWithProperties(context, devices[0], null, err);
+
+            // Programa e kernel — compilados uma vez
+            program = clCreateProgramWithSource(context, 1, new String[]{KERNEL_SRC}, null, null);
+            clBuildProgram(program, 0, null, null, null, null);
+            kernel  = clCreateKernel(program, "countWords", null);
+
+            System.out.println("[ParallelGPU] OpenCL inicializado. Dispositivo: "
+                    + (gpuDevice ? "GPU" : "CPU OpenCL"));
+            return true;
+
+        } catch (Throwable e) {
+            return fail("Falha na inicialização OpenCL: " + e.getMessage());
+        }
+    }
+
+    private boolean fail(String reason) {
+        System.out.println("[ParallelGPU] Usando fallback CPU — " + reason);
+        return false;
+    }
+
+    // ── count() ────────────────────────────────────────────────────────────
 
     @Override
     public long count(String[] lines, String word) {
-        if (!JOCL_AVAILABLE) {
-            fallbackMode = true;
-            return fallbackCount(lines, word);
+        if (fallbackMode || lines.length == 0) {
+            if (!fallbackMode) return 0;
+            return fallback(lines, word);
         }
         try {
             return gpuCount(lines, word);
         } catch (Exception e) {
             fallbackMode = true;
-            System.err.println("[ParallelGPU] OpenCL error, using CPU fallback: " + e.getMessage());
-            return fallbackCount(lines, word);
+            System.err.println("[ParallelGPU] Erro OpenCL, usando fallback: " + e.getMessage());
+            return fallback(lines, word);
         }
     }
 
     private long gpuCount(String[] lines, String word) {
-        if (lines.length == 0) return 0;
+        int totalLines = lines.length;
+        byte[] wordBytes = word.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-        byte[] wordBytes  = word.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        int    totalLines = lines.length;
-
-        // ── Build flat byte buffer of all lines ─────────────────────────────
+        // Constrói buffer plano de texto (linhas concatenadas)
         int[] offsets = new int[totalLines];
         int[] lengths = new int[totalLines];
         int   total   = 0;
@@ -76,59 +150,14 @@ public class ParallelGPUCounter implements WordCounter {
         }
         byte[] wordBuf = wordBytes.length > 0 ? wordBytes : new byte[1];
 
-        // ── Platform / device discovery ──────────────────────────────────────
-        setExceptionsEnabled(false);
+        // Aloca buffers de dados (dependem do texto e da palavra)
+        cl_mem bufText   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, textBuf.length,               Pointer.to(textBuf),   null);
+        cl_mem bufWord   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, wordBuf.length,               Pointer.to(wordBuf),   null);
+        cl_mem bufOff    = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, (long) totalLines * Integer.BYTES, Pointer.to(offsets), null);
+        cl_mem bufLen    = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, (long) totalLines * Integer.BYTES, Pointer.to(lengths), null);
+        cl_mem bufResult = clCreateBuffer(context, CL_MEM_WRITE_ONLY,                         (long) totalLines * Integer.BYTES, null,               null);
 
-        int[] numPlatforms = new int[1];
-        if (clGetPlatformIDs(0, null, numPlatforms) != CL_SUCCESS || numPlatforms[0] == 0)
-            throw new RuntimeException("No OpenCL platform found");
-        cl_platform_id[] platforms = new cl_platform_id[numPlatforms[0]];
-        clGetPlatformIDs(platforms.length, platforms, null);
-
-        // Prefer GPU; fall back to CPU device if not available
-        int[]  numDevices = new int[1];
-        long   deviceType = CL_DEVICE_TYPE_GPU;
-        if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 0, null, numDevices) != CL_SUCCESS
-                || numDevices[0] == 0) {
-            if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_CPU, 0, null, numDevices) != CL_SUCCESS
-                    || numDevices[0] == 0)
-                throw new RuntimeException("No OpenCL device found");
-            deviceType = CL_DEVICE_TYPE_CPU;
-        }
-        cl_device_id[] devices = new cl_device_id[numDevices[0]];
-        clGetDeviceIDs(platforms[0], deviceType, devices.length, devices, null);
-
-        setExceptionsEnabled(true);
-
-        // ── Context / queue ──────────────────────────────────────────────────
-        int[]           err     = new int[1];
-        cl_context      context = clCreateContext(null, 1, devices, null, null, err);
-        cl_command_queue queue  = clCreateCommandQueueWithProperties(context, devices[0], null, err);
-
-        // ── Device buffers ───────────────────────────────────────────────────
-        cl_mem bufText   = clCreateBuffer(context,
-                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                textBuf.length, Pointer.to(textBuf), null);
-        cl_mem bufWord   = clCreateBuffer(context,
-                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                wordBuf.length, Pointer.to(wordBuf), null);
-        cl_mem bufOff    = clCreateBuffer(context,
-                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                (long) totalLines * Integer.BYTES, Pointer.to(offsets), null);
-        cl_mem bufLen    = clCreateBuffer(context,
-                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                (long) totalLines * Integer.BYTES, Pointer.to(lengths), null);
-        cl_mem bufResult = clCreateBuffer(context,
-                CL_MEM_WRITE_ONLY,
-                (long) totalLines * Integer.BYTES, null, null);
-
-        // ── Build program / kernel ───────────────────────────────────────────
-        cl_program program = clCreateProgramWithSource(
-                context, 1, new String[]{KERNEL_SOURCE}, null, null);
-        clBuildProgram(program, 0, null, null, null, null);
-        cl_kernel kernel = clCreateKernel(program, "countEvent", null);
-
-        // ── Set kernel arguments ─────────────────────────────────────────────
+        // Configura argumentos do kernel (context e kernel são reutilizados)
         clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(bufText));
         clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(bufOff));
         clSetKernelArg(kernel, 2, Sizeof.cl_mem, Pointer.to(bufLen));
@@ -137,70 +166,41 @@ public class ParallelGPUCounter implements WordCounter {
         clSetKernelArg(kernel, 5, Sizeof.cl_int, Pointer.to(new int[]{totalLines}));
         clSetKernelArg(kernel, 6, Sizeof.cl_mem, Pointer.to(bufResult));
 
-        // ── Execute kernel ───────────────────────────────────────────────────
-        clEnqueueNDRangeKernel(queue, kernel, 1,
-                null, new long[]{totalLines}, null, 0, null, null);
+        // Executa
+        clEnqueueNDRangeKernel(queue, kernel, 1, null, new long[]{totalLines}, null, 0, null, null);
 
-        // ── Read results back ────────────────────────────────────────────────
+        // Lê resultados
         int[] resultArr = new int[totalLines];
-        clEnqueueReadBuffer(queue, bufResult, true, 0,
+        clEnqueueReadBuffer(queue, bufResult, CL_TRUE, 0,
                 (long) totalLines * Integer.BYTES, Pointer.to(resultArr), 0, null, null);
 
         long count = 0;
         for (int r : resultArr) count += r;
 
-        // ── Release OpenCL resources ─────────────────────────────────────────
+        // Libera apenas os buffers de dados (context/queue/kernel são mantidos)
         clReleaseMemObject(bufText);
         clReleaseMemObject(bufWord);
         clReleaseMemObject(bufOff);
         clReleaseMemObject(bufLen);
         clReleaseMemObject(bufResult);
-        clReleaseKernel(kernel);
-        clReleaseProgram(program);
-        clReleaseCommandQueue(queue);
-        clReleaseContext(context);
 
         return count;
     }
 
-    /** CPU parallel stream fallback. */
-    private long fallbackCount(String[] lines, String word) {
+    /** Libera todos os recursos OpenCL. Chamar ao encerrar o benchmark. */
+    public void release() {
+        if (kernel  != null) clReleaseKernel(kernel);
+        if (program != null) clReleaseProgram(program);
+        if (queue   != null) clReleaseCommandQueue(queue);
+        if (context != null) clReleaseContext(context);
+    }
+
+    private long fallback(String[] lines, String word) {
         return java.util.Arrays.stream(lines).parallel().filter(word::equals).count();
     }
 
-    /**
-     * Attempts to trigger the JOCL native library load.
-     * Returns false (and prints a message) if the native lib is missing or
-     * if no OpenCL runtime is present on the machine.
-     */
-    private static boolean checkJocl() {
-        try {
-            setExceptionsEnabled(false);
-            return true;
-        } catch (Throwable e) {
-            System.out.println("[ParallelGPU] JOCL native library not available — "
-                    + "GPU mode will use CPU fallback: " + e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    public String getName() {
-        return fallbackMode ? "ParallelGPU-FallbackCPU" : "ParallelGPU";
-    }
-
-    @Override
-    public StrategyFamily getFamily() {
-        return StrategyFamily.GPU_OPENCL;
-    }
-
-    @Override
-    public int getParallelism() {
-        return 0;
-    }
-
-    @Override
-    public boolean isRealGpu() {
-        return !fallbackMode;
-    }
+    @Override public String getName()          { return fallbackMode ? "ParallelGPU-FallbackCPU" : "ParallelGPU"; }
+    @Override public StrategyFamily getFamily(){ return StrategyFamily.GPU_OPENCL; }
+    @Override public int getParallelism()      { return 0; }
+    @Override public boolean isRealGpu()       { return !fallbackMode && gpuDevice; }
 }

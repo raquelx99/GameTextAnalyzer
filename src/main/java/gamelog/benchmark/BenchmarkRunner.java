@@ -137,7 +137,21 @@ public class BenchmarkRunner {
         }
 
         printRanking(results, file.getName(), eventToCount);
+
         return results;
+    }
+
+    /**
+     * Libera recursos dos counters com estado (pool de threads, contexto OpenCL).
+     * Deve ser chamado UMA vez ao final de TODOS os benchmarks, não entre arquivos.
+     * Chamar durante o benchmark causaria RejectedExecutionException nas próximas runs.
+     */
+    public void releaseCounters(List<WordCounter> counters) {
+        for (WordCounter counter : counters) {
+            if (counter instanceof ParallelCPUCounter pcc) pcc.shutdown();
+            if (counter instanceof ForkJoinCPUCounter fjc) fjc.shutdown();
+            if (counter instanceof ParallelGPUCounter gpu) gpu.release();
+        }
     }
 
     private void printRanking(List<BenchmarkResult> results, String fileName, String event) {

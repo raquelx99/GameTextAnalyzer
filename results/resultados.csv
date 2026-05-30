@@ -1,100 +1,100 @@
 file,world,total_words,word_searched,strategy_id,method,family,parallelism,run,occurrences,time_ms,speedup,efficiency,words_per_ms,is_real_gpu
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,1,2245,1.8168,1.0000,1.0000,212893.00,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,2,2245,2.0128,0.9026,0.9026,192162.16,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,3,2245,1.7364,1.0463,1.0463,222750.52,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,1,2245,7.9275,0.2292,0.2292,48790.16,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,2,2245,2.3077,0.7873,0.7873,167605.84,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,3,2245,2.1740,0.8357,0.8357,177913.52,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,2245,1.7241,1.0538,0.5269,224339.66,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,2245,1.8727,0.9702,0.4851,206538.15,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,2245,1.3450,1.3508,0.6754,287571.75,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,2245,1.4927,1.2171,0.3043,259117.04,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,2245,2.1089,0.8615,0.2154,183405.57,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,2245,1.7613,1.0315,0.2579,219601.43,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,2245,1.8544,0.9797,0.1225,208576.36,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,2245,1.9832,0.9161,0.1145,195030.25,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,2245,1.9948,0.9108,0.1138,193896.13,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,2245,4.1683,0.4359,0.0218,92791.79,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,2245,4.4441,0.4088,0.0204,87033.15,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,2245,3.5798,0.5075,0.0254,108046.26,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,2245,15.5282,0.1170,0.0059,24908.49,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,2245,9.1960,0.1976,0.0099,42060.03,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,2245,4.7996,0.3785,0.0189,80586.72,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,2245,0.6600,2.7527,2.7527,586036.36,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,2245,0.5300,3.4279,3.4279,729781.13,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,2245,0.5018,3.6206,3.6206,770793.14,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,2245,17.2089,0.1056,0.0021,22475.81,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,2245,5.3013,0.3427,0.0069,72960.22,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,2245,0.6961,2.6100,0.0522,555644.30,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,2245,0.7550,2.4064,0.0241,512296.69,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,2245,0.5574,3.2594,0.0326,693907.43,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,2245,0.8153,2.2284,0.0223,474406.97,false
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,2245,31.4526,0.0578,0.0578,12297.36,true
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,2245,24.0897,0.0754,0.0754,16055.99,true
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,2245,23.1388,0.0785,0.0785,16715.82,true
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,1,113,0.6706,1.0000,1.0000,249170.89,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,2,113,0.7305,0.9180,0.9180,228739.22,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,3,113,0.5608,1.1958,1.1958,297956.49,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,1,113,0.9306,0.7206,0.7206,179555.13,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,2,113,0.8386,0.7997,0.7997,199253.52,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,3,113,0.7689,0.8722,0.8722,217315.65,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,113,0.8829,0.7595,0.3798,189255.86,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,113,0.6380,1.0511,0.5255,261902.82,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,113,0.6133,1.0934,0.5467,272450.68,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,113,0.8662,0.7742,0.1935,192904.64,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,113,1.1020,0.6085,0.1521,151627.95,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,113,1.0881,0.6163,0.1541,153564.93,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,113,1.3144,0.5102,0.0638,127125.68,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,113,1.2743,0.5262,0.0658,131126.11,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,113,1.2142,0.5523,0.0690,137616.54,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,113,2.8224,0.2376,0.0119,59202.81,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,113,3.4248,0.1958,0.0098,48789.42,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,113,3.4985,0.1917,0.0096,47761.61,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,113,0.3900,1.7195,0.0860,428446.15,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,113,0.2646,2.5344,0.1267,631496.60,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,113,0.1942,3.4531,0.1727,860422.25,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,113,0.3524,1.9030,1.9030,474160.05,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,113,0.2014,3.3297,3.3297,829662.36,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,113,0.2588,2.5912,2.5912,645649.15,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,113,0.3491,1.9209,0.0384,478642.22,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,113,0.3178,2.1101,0.0422,525783.51,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,113,0.3014,2.2250,0.0445,554392.83,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,113,0.4242,1.5809,0.0158,393903.82,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,113,0.2999,2.2361,0.0224,557165.72,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,113,0.2794,2.4001,0.0240,598045.81,false
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,113,11.3039,0.0593,0.0593,14781.98,true
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,113,10.0049,0.0670,0.0670,16701.22,true
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,113,10.6155,0.0632,0.0632,15740.57,true
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,1,1229,1.2871,1.0000,1.0000,172962.47,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,2,1229,1.4361,0.8962,0.8962,155017.06,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,3,1229,1.1958,1.0764,1.0764,186168.26,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,1,1229,1.6502,0.7800,0.7800,134904.86,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,2,1229,1.7900,0.7191,0.7191,124368.72,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,3,1229,1.7589,0.7318,0.7318,126567.74,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,1229,1.2801,1.0055,0.5027,173908.29,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,1229,1.3659,0.9423,0.4712,162984.11,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,1229,1.0057,1.2798,0.6399,221358.26,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,1229,1.3485,0.9545,0.2386,165087.13,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,1229,1.4992,0.8585,0.2146,148492.53,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,1229,1.0286,1.2513,0.3128,216430.10,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,1229,1.2081,1.0654,0.1332,184272.83,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,1229,1.0832,1.1882,0.1485,205520.68,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,1229,1.1037,1.1662,0.1458,201703.36,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,1229,2.6045,0.4942,0.0247,85475.14,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,1229,3.5413,0.3635,0.0182,62863.92,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,1229,3.0792,0.4180,0.0209,72298.00,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,1229,0.5140,2.5041,0.1252,433112.84,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,1229,0.3266,3.9409,0.1970,681628.90,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,1229,0.3756,3.4268,0.1713,592705.01,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,1229,0.3339,3.8547,3.8547,666726.56,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,1229,0.3431,3.7514,3.7514,648848.73,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,1229,0.2778,4.6332,4.6332,801367.89,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,1229,0.5647,2.2793,0.0456,394227.02,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,1229,0.3423,3.7602,0.0752,650365.18,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,1229,0.3176,4.0526,0.0811,700944.58,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,1229,0.4326,2.9753,0.0298,514609.34,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,1229,0.3939,3.2676,0.0327,565168.82,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,1229,0.3072,4.1898,0.0419,724674.48,false
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,1229,15.0348,0.0856,0.0856,14806.98,true
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,1229,14.7262,0.0874,0.0874,15117.27,true
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,1229,14.4420,0.0891,0.0891,15414.76,true
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,1,2245,1.6345,1.0000,1.0000,236637.50,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,2,2245,1.4277,1.1448,1.1448,270914.06,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialcpu,SerialCPU,SERIAL,1,3,2245,1.6428,0.9949,0.9949,235441.93,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,1,2245,2.1781,0.7504,0.7504,177578.62,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,2,2245,2.1891,0.7467,0.7467,176686.31,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,serialstream,SerialStream,SERIAL,1,3,2245,2.4065,0.6792,0.6792,160724.70,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,2245,1.2363,1.3221,0.6610,312856.10,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,2245,1.0542,1.5505,0.7752,366898.12,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,2245,0.9111,1.7940,0.8970,424524.20,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,2245,1.1017,1.4836,0.3709,351079.24,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,2245,1.0817,1.5110,0.3778,357570.49,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,2245,1.2560,1.3014,0.3253,307949.04,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,2245,1.1969,1.3656,0.1707,323154.82,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,2245,0.6813,2.3991,0.2999,567714.66,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,2245,0.6552,2.4947,0.3118,590329.67,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,2245,0.9023,1.8115,0.0906,428664.52,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,2245,1.3525,1.2085,0.0604,285977.08,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,2245,1.0110,1.6167,0.0808,382575.67,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,2245,12.2432,0.1335,0.0067,31591.74,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,2245,9.6815,0.1688,0.0084,39950.83,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,2245,7.1412,0.2289,0.0114,54162.33,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,2245,0.7321,2.2326,2.2326,528321.27,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,2245,0.5993,2.7273,2.7273,645392.96,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,2245,0.5121,3.1918,3.1918,755289.98,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,2245,0.7095,2.3037,0.0461,545150.11,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,2245,0.9873,1.6555,0.0331,391759.34,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,2245,0.6445,2.5361,0.0507,600130.33,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,2245,0.7505,2.1779,0.0218,515368.42,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,2245,0.9011,1.8139,0.0181,429235.38,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,2245,0.8518,1.9189,0.0192,454078.42,false
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,2245,31.2572,0.0523,0.0523,12374.24,true
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,2245,30.1913,0.0541,0.0541,12811.11,true
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,2245,26.4004,0.0619,0.0619,14650.69,true
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,1,113,0.6873,0.9694,0.9694,243116.54,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,2,113,0.6663,1.0000,1.0000,250778.93,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialcpu,SerialCPU,SERIAL,1,3,113,0.5474,1.2172,1.2172,305250.27,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,1,113,1.0730,0.6210,0.6210,155726.00,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,2,113,0.9169,0.7267,0.7267,182237.98,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,serialstream,SerialStream,SERIAL,1,3,113,1.1519,0.5784,0.5784,145059.47,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,113,0.4059,1.6415,0.8208,411662.97,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,113,0.3800,1.7534,0.8767,439721.05,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,113,0.3213,2.0738,1.0369,520056.02,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,113,0.2109,3.1593,0.7898,792290.18,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,113,0.2987,2.2307,0.5577,559404.08,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,113,0.2716,2.4532,0.6133,615220.91,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,113,0.3152,2.1139,0.2642,530120.56,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,113,0.1962,3.3960,0.4245,851651.38,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,113,0.1868,3.5669,0.4459,894507.49,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,113,0.3038,2.1932,0.1097,550013.17,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,113,0.2362,2.8209,0.1410,707425.91,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,113,0.2905,2.2936,0.1147,575194.49,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,113,0.4647,1.4338,0.0717,359573.92,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,113,0.3014,2.2107,0.1105,554392.83,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,113,0.2904,2.2944,0.1147,575392.56,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,113,0.4466,1.4919,1.4919,374146.89,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,113,0.1926,3.4595,3.4595,867570.09,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,113,0.2475,2.6921,2.6921,675127.27,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,113,0.3649,1.8260,0.0365,457917.24,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,113,0.2821,2.3619,0.0472,592321.87,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,113,0.3234,2.0603,0.0412,516679.04,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,113,0.3842,1.7343,0.0173,434914.11,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,113,0.2877,2.3160,0.0232,580792.49,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,113,0.2854,2.3346,0.0233,585473.02,false
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,113,11.8666,0.0561,0.0561,14081.03,true
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,113,10.2386,0.0651,0.0651,16320.00,true
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,113,10.4670,0.0637,0.0637,15963.89,true
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,1,1229,1.0295,1.0000,1.0000,216240.89,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,2,1229,0.9211,1.1177,1.1177,241689.28,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialcpu,SerialCPU,SERIAL,1,3,1229,1.1476,0.8971,0.8971,193987.45,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,1,1229,1.5640,0.6582,0.6582,142340.15,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,2,1229,1.6123,0.6385,0.6385,138076.04,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,serialstream,SerialStream,SERIAL,1,3,1229,2.0158,0.5107,0.5107,110437.54,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,1,1229,0.8729,1.1794,0.5897,255034.94,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,2,1229,0.7584,1.3575,0.6787,293539.03,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_2t,ParallelCPU-2t,PARALLEL_CPU,2,3,1229,0.5865,1.7553,0.8777,379573.74,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,1,1229,0.4438,2.3197,0.5799,501622.35,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,2,1229,0.6214,1.6567,0.4142,358255.55,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_4t,ParallelCPU-4t,PARALLEL_CPU,4,3,1229,0.6784,1.5175,0.3794,328154.48,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,1,1229,0.6845,1.5040,0.1880,325230.09,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,2,1229,0.5071,2.0302,0.2538,439006.11,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_8t,ParallelCPU-8t,PARALLEL_CPU,8,3,1229,0.3728,2.7615,0.3452,597156.65,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,1,1229,0.4426,2.3260,0.1163,502982.38,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,2,1229,0.3265,3.1531,0.1577,681837.67,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelcpu_20t,ParallelCPU-20t,PARALLEL_CPU,20,3,1229,0.4712,2.1848,0.1092,472453.31,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,1,1229,0.3307,3.1131,0.1557,673178.11,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,2,1229,0.3523,2.9222,0.1461,631904.63,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,forkjoincpu,ForkJoinCPU,PARALLEL_CPU,20,3,1229,0.3496,2.9448,0.1472,636784.90,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,1,1229,0.3522,2.9231,2.9231,632084.04,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,2,1229,0.3346,3.0768,3.0768,665331.74,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelstream,ParallelStream,PARALLEL_STREAM,20,3,1229,0.2289,4.4976,4.4976,972564.44,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,1,1229,0.6518,1.5795,0.0316,341546.49,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,2,1229,0.5229,1.9688,0.0394,425741.06,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_50chunks,VirtualThreads-50chunks,VIRTUAL_THREADS,50,3,1229,0.4792,2.1484,0.0430,464565.94,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,1,1229,0.5791,1.7778,0.0178,384424.11,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,2,1229,0.4481,2.2975,0.0230,496808.75,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,virtualthreads_100chunks,VirtualThreads-100chunks,VIRTUAL_THREADS,100,3,1229,0.7389,1.3933,0.0139,301285.69,false
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,1,1229,13.4522,0.0765,0.0765,16548.97,true
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,2,1229,12.7343,0.0808,0.0808,17481.92,true
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,parallelgpu,ParallelGPU,GPU_OPENCL,0,3,1229,21.3999,0.0481,0.0481,10402.85,true

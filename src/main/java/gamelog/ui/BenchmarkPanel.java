@@ -278,6 +278,12 @@ public class BenchmarkPanel extends JPanel {
 
                 System.out.println("\n  ✓ Benchmark concluído! Gerando gráficos...");
                 ChartGenerator.generateAll(allResults, MainWindow.CHARTS_DIR);
+
+                // Libera recursos APÓS todas as runs e todos os arquivos terminarem.
+                // Fazer isso dentro de run() causaria RejectedExecutionException
+                // porque o mesmo counter é reutilizado entre arquivos.
+                runner.releaseCounters(selectedStrategies);
+
                 return allResults;
             }
 
