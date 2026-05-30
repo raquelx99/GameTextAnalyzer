@@ -125,45 +125,58 @@ public class ChartsPanel extends JPanel {
         List<ChartCategory> result = new ArrayList<>();
 
         result.add(new ChartCategory(
-                "Visão geral",
-                "Comparações principais entre todas as estratégias e amostras.",
-                new ChartInfo("Tempo mediano por método", "Compara o tempo mediano das estratégias em cada obra.", "chart_median_time.png"),
-                new ChartInfo("Impacto do tamanho do texto", "Mostra como o total de palavras impacta o tempo de execução.", "chart_size_impact.png"),
-                new ChartInfo("Tempo normalizado por 100 mil palavras", "Permite comparar textos de tamanhos diferentes de forma mais justa.", "chart_normalized_100k.png"),
-                new ChartInfo("Tempo médio com desvio padrão", "Evidencia média e estabilidade estatística dos métodos.", "chart_mean_stddev.png"),
-                new ChartInfo("Variação entre as 3 execuções", "Mostra as amostras exigidas no enunciado e a oscilação dos tempos.", "chart_run_variation.png")
+                "Comparação direta",
+                "Comparações diretas entre os métodos — responde à exigência central do enunciado.",
+                new ChartInfo("Tempo mediano por método",
+                        "Uma barra por método em cada obra. Menor = melhor. SerialCPU é o baseline.",
+                        "chart_01_tempo_mediano.png"),
+                new ChartInfo("Speedup vs. SerialCPU",
+                        "Speedup = tempo_serial / tempo_método. Valor > 1 significa mais rápido que o serial.",
+                        "chart_02_speedup_vs_serial.png")
         ));
 
         result.add(new ChartCategory(
-                "Paralelismo CPU",
-                "Gráficos focados em threads tradicionais, ForkJoin e ParallelStream.",
-                new ChartInfo("Impacto do número de threads", "Analisa 2, 4, 8 e núcleos disponíveis no ParallelCPU.", "chart_thread_impact.png"),
-                new ChartInfo("Speedup da CPU paralela por threads", "Mostra o ganho em relação ao SerialCPU conforme o paralelismo aumenta.", "chart_cpu_speedup_threads.png"),
-                new ChartInfo("Eficiência paralela", "Mostra o aproveitamento das threads usando speedup dividido por threads.", "chart_parallel_efficiency.png"),
-                new ChartInfo("Vertente CPU paralela", "Compara FixedThreadPool, ForkJoin e ParallelStream.", "chart_cpu_strategy_branch.png")
+                "Impacto de núcleos",
+                "Efeito do número de threads no ParallelCPU — exigência explícita do enunciado.",
+                new ChartInfo("Threads × Tempo",
+                        "Uma curva por obra: como o tempo cai conforme threads aumentam.",
+                        "chart_03_threads_tempo.png"),
+                new ChartInfo("Threads × Speedup",
+                        "Mostra onde o ganho para de crescer (lei de Amdahl na prática).",
+                        "chart_04_threads_speedup.png"),
+                new ChartInfo("Eficiência paralela",
+                        "Eficiência = speedup / threads. Valor ideal = 1.0. Queda revela overhead.",
+                        "chart_05_amdahl_efficiency.png")
         ));
 
         result.add(new ChartCategory(
-                "Speedup e vazão",
-                "Métricas derivadas para avaliar ganho real e capacidade de processamento.",
-                new ChartInfo("Speedup em relação ao SerialCPU", "Indica quantas vezes cada método foi mais rápido ou mais lento que o serial.", "chart_speedup.png"),
-                new ChartInfo("Throughput", "Mostra quantas palavras foram processadas por milissegundo.", "chart_throughput.png"),
-                new ChartInfo("Melhor desempenho por família", "Compara a melhor estratégia de cada família de paralelização.", "chart_best_by_family.png")
+                "Impacto do tamanho",
+                "Como o volume do texto afeta o tempo — exigência explícita do enunciado.",
+                new ChartInfo("Escalabilidade por tamanho",
+                        "Eixo X = palavras do texto. Eixo Y = tempo mediano. Uma curva por método.",
+                        "chart_06_escala_tamanho.png"),
+                new ChartInfo("Tempo normalizado por 100 mil palavras",
+                        "Remove o viés de tamanho: compara a velocidade real de cada método.",
+                        "chart_07_tempo_normalizado.png")
         ));
 
         result.add(new ChartCategory(
-                "GPU e virtual threads",
-                "Gráficos para investigar OpenCL/GPU, fallback e virtual threads.",
-                new ChartInfo("SerialCPU vs melhor ParallelCPU vs GPU", "Resume os principais competidores em cada amostra.", "chart_cpu_vs_gpu.png"),
-                new ChartInfo("Vertente GPU/OpenCL", "Compara GPU/fallback contra serial, melhor CPU paralela e virtual threads.", "chart_gpu_branch.png"),
-                new ChartInfo("Vertente Virtual Threads", "Compara granularidades diferentes de virtual threads.", "chart_virtual_threads_branch.png")
+                "Estabilidade",
+                "Variabilidade entre as 3 execuções — análise estatística exigida no enunciado.",
+                new ChartInfo("3 execuções individuais",
+                        "Cada barra é uma execução. Barras iguais = método estável.",
+                        "chart_08_tres_execucoes.png"),
+                new ChartInfo("Média ± desvio padrão",
+                        "Barras = média das 3 execuções. Whiskers = desvio padrão.",
+                        "chart_09_media_desvio.png")
         ));
 
         result.add(new ChartCategory(
-                "Análise narrativa",
-                "Gráficos que sustentam a camada gamificada dos mundos literários.",
-                new ChartInfo("Ranking por mundo narrativo", "Apresenta o método vencedor em cada obra/mundo narrativo.", "chart_ranking_world.png"),
-                new ChartInfo("Densidade da palavra-tema", "Mostra a frequência da palavra buscada a cada 10 mil palavras.", "chart_word_density.png")
+                "GPU vs CPU",
+                "Comparação destacada da GPU — método mais complexo do trabalho.",
+                new ChartInfo("GPU vs melhor CPU paralela vs Serial",
+                        "Resume os três protagonistas: baseline, melhor CPU paralela e GPU/OpenCL.",
+                        "chart_10_gpu_vs_cpu.png")
         ));
 
         return result;
@@ -293,29 +306,97 @@ public class ChartsPanel extends JPanel {
 
             try {
                 BufferedImage img = ImageIO.read(imgFile);
-                JLabel imgLabel = new JLabel(new ImageIcon(img));
-                imgLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                imgLabel.setVerticalAlignment(SwingConstants.CENTER);
+                ZoomableImagePanel zoomPanel = new ZoomableImagePanel(img);
 
-                JScrollPane scroll = new JScrollPane(imgLabel);
+                JScrollPane scroll = new JScrollPane(zoomPanel);
                 scroll.setBorder(BorderFactory.createEmptyBorder());
                 scroll.getViewport().setBackground(MainWindow.BG_DARK);
                 scroll.setBackground(MainWindow.BG_DARK);
-                scroll.getVerticalScrollBar().setUnitIncrement(18);
-                scroll.getHorizontalScrollBar().setUnitIncrement(18);
-                p.add(scroll, BorderLayout.CENTER);
+                scroll.getVerticalScrollBar().setUnitIncrement(24);
+                scroll.getHorizontalScrollBar().setUnitIncrement(24);
+
+                // ── Zoom toolbar ────────────────────────────────────────────
+                JLabel zoomLabel = new JLabel("100%");
+                zoomLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+                zoomLabel.setForeground(MainWindow.TEXT_MAIN);
+                zoomLabel.setPreferredSize(new Dimension(52, 24));
+                zoomLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+                JSlider slider = new JSlider(10, 300, 100);
+                slider.setBackground(Theme.BG_SURFACE);
+                slider.setForeground(MainWindow.TEXT_DIM);
+                slider.setPreferredSize(new Dimension(200, 26));
+                slider.setMajorTickSpacing(100);
+                slider.setPaintTicks(true);
+                slider.setSnapToTicks(false);
+
+                slider.addChangeListener(e -> {
+                    int pct = slider.getValue();
+                    zoomPanel.setZoom(pct / 100.0);
+                    zoomLabel.setText(pct + "%");
+                });
+
+                JButton fitBtn    = MainWindow.secondaryButton("Ajustar");
+                JButton zoomInBtn = MainWindow.secondaryButton("+");
+                JButton zoomOutBtn= MainWindow.secondaryButton("−");
+
+                fitBtn.setToolTipText("Ajustar à janela");
+                zoomInBtn.setPreferredSize(new Dimension(36, 28));
+                zoomOutBtn.setPreferredSize(new Dimension(36, 28));
+
+                fitBtn.addActionListener(e -> applyFitZoom(scroll, img, slider));
+                zoomInBtn.addActionListener(e  -> slider.setValue(Math.min(300, slider.getValue() + 15)));
+                zoomOutBtn.addActionListener(e -> slider.setValue(Math.max(10,  slider.getValue() - 15)));
+
+                // Ctrl + scroll wheel
+                scroll.addMouseWheelListener(e -> {
+                    if (e.isControlDown()) {
+                        int delta = e.getWheelRotation() < 0 ? 15 : -15;
+                        slider.setValue(Math.max(10, Math.min(300, slider.getValue() + delta)));
+                    } else {
+                        // pass to scroll pane
+                        scroll.getVerticalScrollBar().setValue(
+                            scroll.getVerticalScrollBar().getValue() + e.getWheelRotation() * 24);
+                    }
+                });
+
+                JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 5));
+                toolbar.setBackground(Theme.BG_SURFACE);
+                toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, MainWindow.BORDER_COL));
+                toolbar.add(zoomOutBtn);
+                toolbar.add(slider);
+                toolbar.add(zoomInBtn);
+                toolbar.add(zoomLabel);
+                toolbar.add(Box.createHorizontalStrut(8));
+                toolbar.add(fitBtn);
 
                 JLabel info = new JLabel(String.format(
-                        "  %s  ·  %dx%d px  ·  %.1f KB",
+                        "  %s  ·  %dx%d px  ·  %.1f KB  ·  Ctrl + scroll para zoom",
                         imgFile.getName(), img.getWidth(), img.getHeight(), imgFile.length() / 1024.0));
                 info.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 info.setForeground(MainWindow.TEXT_DIM);
-                info.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+                info.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+
+                p.add(toolbar, BorderLayout.NORTH);
+                p.add(scroll, BorderLayout.CENTER);
                 p.add(info, BorderLayout.SOUTH);
+
+                // Auto-fit after layout is realized
+                SwingUtilities.invokeLater(() -> applyFitZoom(scroll, img, slider));
+
             } catch (IOException ex) {
                 p.add(errorView("Erro ao carregar gráfico: " + ex.getMessage()), BorderLayout.CENTER);
             }
             return p;
+        }
+
+        private static void applyFitZoom(JScrollPane scroll, BufferedImage img, JSlider slider) {
+            Dimension vp = scroll.getViewport().getSize();
+            if (vp.width < 10 || vp.height < 10) return;
+            double sx = (double) vp.width  / img.getWidth();
+            double sy = (double) vp.height / img.getHeight();
+            int pct = (int) Math.round(Math.min(sx, sy) * 93);
+            slider.setValue(Math.max(10, Math.min(300, pct)));
         }
 
         private JPanel placeholderView(ChartInfo chart) {
@@ -403,6 +484,44 @@ public class ChartsPanel extends JPanel {
             actionMap.put("nextChart", new AbstractAction() {
                 @Override public void actionPerformed(ActionEvent e) { next(); }
             });
+        }
+    }
+
+    private static final class ZoomableImagePanel extends JPanel {
+        private final BufferedImage img;
+        private double zoom = 1.0;
+
+        ZoomableImagePanel(BufferedImage img) {
+            this.img = img;
+            setBackground(MainWindow.BG_DARK);
+        }
+
+        void setZoom(double z) {
+            this.zoom = Math.max(0.05, Math.min(5.0, z));
+            revalidate();
+            repaint();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(
+                (int) Math.round(img.getWidth()  * zoom),
+                (int) Math.round(img.getHeight() * zoom));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            int iw = (int) Math.round(img.getWidth()  * zoom);
+            int ih = (int) Math.round(img.getHeight() * zoom);
+            int x  = Math.max(0, (getWidth()  - iw) / 2);
+            int y  = Math.max(0, (getHeight() - ih) / 2);
+            g2.drawImage(img, x, y, iw, ih, null);
         }
     }
 

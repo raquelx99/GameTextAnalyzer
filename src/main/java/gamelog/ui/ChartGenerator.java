@@ -12,432 +12,514 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Generates benchmark charts using pure Java2D — no external charting library required.
+ * ChartGenerator — 10 gráficos curados, organizados em 4 blocos
+ * diretamente alinhados com os requisitos do enunciado.
  *
- * The charts intentionally cover the main requirements of the assignment:
- *  - comparison between SerialCPU, ParallelCPU and ParallelGPU;
- *  - different input texts / narrative worlds;
- *  - three timed samples per method;
- *  - different CPU thread counts;
- *  - CSV-based statistical analysis.
+ * ══════════════════════════════════════════════════════════════════════
+ *  BLOCO 1 — COMPARAÇÃO DIRETA ENTRE MÉTODOS (exigência central)
+ *   1. chart_01_tempo_mediano        — tempo mediano: 1 barra por método,
+ *                                      uma linha por texto. Mostra claramente
+ *                                      quem é mais rápido em cada obra.
+ *   2. chart_02_speedup_vs_serial    — speedup de cada método relativo ao
+ *                                      SerialCPU. Quanto mais rápido que o
+ *                                      baseline? Responde diretamente o enunciado.
+ *
+ *  BLOCO 2 — IMPACTO DO NÚMERO DE NÚCLEOS (exigência explícita)
+ *   3. chart_03_threads_tempo        — tempo mediano do ParallelCPU de 1 a N
+ *                                      threads: gráfico de linha, uma curva por texto.
+ *   4. chart_04_threads_speedup      — speedup do ParallelCPU por nº de threads.
+ *                                      Mostra onde o ganho para de crescer.
+ *   5. chart_05_amdahl_efficiency    — eficiência paralela (speedup / threads).
+ *                                      Revela overhead e lei de Amdahl.
+ *
+ *  BLOCO 3 — IMPACTO DO TAMANHO DO TEXTO (exigência explícita)
+ *   6. chart_06_escala_tamanho       — eixo X = tamanho do texto (palavras),
+ *                                      eixo Y = tempo mediano. Uma linha por método.
+ *                                      Mostra escalabilidade.
+ *   7. chart_07_tempo_normalizado    — tempo / 100 mil palavras. Remove o viés de
+ *                                      tamanho: compara a "velocidade" real de cada
+ *                                      método independente do volume.
+ *
+ *  BLOCO 4 — ESTABILIDADE E VARIABILIDADE (3 amostras, exigência explícita)
+ *   8. chart_08_tres_execucoes       — tempo das 3 execuções individuais de cada
+ *                                      método, por obra. Mostra reprodutibilidade.
+ *   9. chart_09_media_desvio         — média ± desvio padrão das 3 execuções.
+ *                                      Análise estatística pedida explicitamente.
+ *  10. chart_10_gpu_vs_cpu           — GPU vs melhor CPU paralela vs Serial.
+ *                                      Gráfico de destaque para a discussão GPU,
+ *                                      que é o método mais complexo do trabalho.
+ * ══════════════════════════════════════════════════════════════════════
+ *
+ * Regras de legibilidade aplicadas:
+ *  – Máximo 6 séries por gráfico de barras agrupadas.
+ *  – Gráficos de linha usados apenas para tendências (threads, tamanho).
+ *  – Cada gráfico tem subtítulo que explica como interpretá-lo.
+ *  – Cores consistentes: SerialCPU sempre azul, GPU sempre vermelho, etc.
  */
 public class ChartGenerator {
 
-    private static final int W = 1000;
-    private static final int H = 580;
+    // ── Canvas ─────────────────────────────────────────────────────────────
+    private static final int W = 1400;
+    private static final int H = 820;
 
-    private static final Color BG = new Color(0x1A1A2E);
-    private static final Color GRID = new Color(255, 255, 255, 55);
-    private static final Color TEXT = new Color(0xF5F7FA);
-    private static final Color TEXT_DIM = new Color(0xB8C1D1);
+    // ── Design ────────────────────────────────────────────────────────────
+    private static final Color BG      = new Color(0x12121E);
+    private static final Color BG_PLOT = new Color(0x1A1A2E);
+    private static final Color GRID    = new Color(255, 255, 255, 38);
+    private static final Color GRID_AX = new Color(255, 255, 255, 90);
+    private static final Color TEXT    = new Color(0xEEEEF8);
+    private static final Color DIMMED  = new Color(0x9090B0);
 
-    private static final Color[] PALETTE = {
-            new Color(0x4E79A7), new Color(0xF28E2B), new Color(0xE15759),
-            new Color(0x76B7B2), new Color(0x59A14F), new Color(0xEDC948),
-            new Color(0xB07AA1), new Color(0xFF9DA7), new Color(0x9C755F)
-    };
+    // ── Método → cor consistente ──────────────────────────────────────────
+    private static final Color C_SERIAL  = new Color(0x6C8EF5);
+    private static final Color C_SSTREAM = new Color(0x8AABFF);
+    private static final Color C_CPU2    = new Color(0x4EC994);
+    private static final Color C_CPU4    = new Color(0xF5A623);
+    private static final Color C_CPU8    = new Color(0xF5734B);
+    private static final Color C_CPUN    = new Color(0xE573C8);
+    private static final Color C_FORK    = new Color(0xA8D8A8);
+    private static final Color C_PSTREAM = new Color(0xEDC948);
+    private static final Color C_VT      = new Color(0xB07BF5);
+    private static final Color C_GPU     = new Color(0xFF6B6B);
 
-    public static void generateAll(List<BenchmarkResult> results, String outputDir) throws IOException {
+    // ── Entrada pública ───────────────────────────────────────────────────
+
+    public static void generateAll(List<BenchmarkResult> results, String outputDir)
+            throws IOException {
         new File(outputDir).mkdirs();
-        if (results == null || results.isEmpty()) {
-            throw new IOException("Nenhum resultado encontrado para gerar gráficos.");
-        }
+        if (results == null || results.isEmpty())
+            throw new IOException("Nenhum resultado para gerar gráficos.");
 
-        saveChart(chartMedianTime(results),          outputDir + "/chart_median_time.png");
-        saveChart(chartThreadImpact(results),        outputDir + "/chart_thread_impact.png");
-        saveChart(chartSpeedup(results),             outputDir + "/chart_speedup.png");
-        saveChart(chartThroughput(results),          outputDir + "/chart_throughput.png");
+        // Bloco 1 — Comparação direta
+        save(chart01_TempoMediano(results),     outputDir + "/chart_01_tempo_mediano.png");
+        save(chart02_SpeedupVsSerial(results),  outputDir + "/chart_02_speedup_vs_serial.png");
 
-        saveChart(chartRunVariation(results),        outputDir + "/chart_run_variation.png");
-        saveChart(chartMeanStdDev(results),          outputDir + "/chart_mean_stddev.png");
-        saveChart(chartSizeImpact(results),          outputDir + "/chart_size_impact.png");
-        saveChart(chartNormalized100k(results),      outputDir + "/chart_normalized_100k.png");
-        saveChart(chartCpuSpeedupThreads(results),   outputDir + "/chart_cpu_speedup_threads.png");
-        saveChart(chartParallelEfficiency(results),  outputDir + "/chart_parallel_efficiency.png");
-        saveChart(chartCpuVsGpu(results),            outputDir + "/chart_cpu_vs_gpu.png");
-        saveChart(chartRankingByWorld(results),      outputDir + "/chart_ranking_world.png");
-        saveChart(chartWordDensity(results),         outputDir + "/chart_word_density.png");
+        // Bloco 2 — Impacto de núcleos
+        save(chart03_ThreadsTempo(results),     outputDir + "/chart_03_threads_tempo.png");
+        save(chart04_ThreadsSpeedup(results),   outputDir + "/chart_04_threads_speedup.png");
+        save(chart05_EficienciaParalela(results),outputDir + "/chart_05_amdahl_efficiency.png");
 
-        saveChart(chartBestByFamily(results),        outputDir + "/chart_best_by_family.png");
-        saveChart(chartCpuStrategyBranch(results),   outputDir + "/chart_cpu_strategy_branch.png");
-        saveChart(chartVirtualThreadsBranch(results),outputDir + "/chart_virtual_threads_branch.png");
-        saveChart(chartGpuBranch(results),           outputDir + "/chart_gpu_branch.png");
+        // Bloco 3 — Impacto do tamanho
+        save(chart06_EscalaTamanho(results),    outputDir + "/chart_06_escala_tamanho.png");
+        save(chart07_TempoNormalizado(results),  outputDir + "/chart_07_tempo_normalizado.png");
 
-        System.out.println("\n  Charts saved to: " + new File(outputDir).getAbsolutePath());
+        // Bloco 4 — Estabilidade
+        save(chart08_TresExecucoes(results),    outputDir + "/chart_08_tres_execucoes.png");
+        save(chart09_MediaDesvio(results),      outputDir + "/chart_09_media_desvio.png");
+        save(chart10_GpuVsCpu(results),         outputDir + "/chart_10_gpu_vs_cpu.png");
+
+        System.out.println("\n  10 gráficos salvos em: " + new File(outputDir).getAbsolutePath());
     }
 
-    // 1 — Median time per method and sample
-    private static BufferedImage chartMedianTime(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results);
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) row.put(m, medianTime(results, f, m));
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Tempo mediano por método", "Amostra / Mundo Narrativo", "Tempo (ms)", data, methods);
+    // ══════════════════════════════════════════════════════════════════════
+    //  BLOCO 1 — Comparação direta entre métodos
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 1. Tempo mediano de cada método por texto.
+     * Usa métodos "representativos" (1 por família) para manter ≤ 6 séries.
+     * Inclui SerialCPU como referência visual.
+     */
+    private static BufferedImage chart01_TempoMediano(List<BenchmarkResult> r) {
+        List<String> methods = repMethods(r);
+        return barChart(
+            "1. Tempo mediano de execução por método",
+            "Menor valor = melhor desempenho.  SerialCPU é o baseline de comparação.",
+            "Texto / Obra literária", "Tempo mediano (ms)",
+            buildBarData(r, orderedFiles(r), methods),
+            methods, methodPalette(methods));
     }
 
-    // 2 — Thread impact on ParallelCPU
-    private static BufferedImage chartThreadImpact(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> cpuMethods = orderedCpuMethods(results, true);
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : cpuMethods) row.put(m, medianTime(results, f, m));
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Impacto do número de threads na CPU", "Amostra / Mundo Narrativo", "Tempo (ms)", data, cpuMethods);
-    }
+    /**
+     * 2. Speedup de cada método relativo ao SerialCPU.
+     * Speedup = tempo_serial / tempo_método. Valor > 1 = mais rápido que serial.
+     * Responde diretamente: "quanto cada método ganhou?"
+     */
+    private static BufferedImage chart02_SpeedupVsSerial(List<BenchmarkResult> r) {
+        List<String> methods = repMethods(r);
+        List<String> files   = orderedFiles(r);
 
-    // 3 — Speedup
-    private static BufferedImage chartSpeedup(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results);
         Map<String, Map<String, Double>> data = new LinkedHashMap<>();
         for (String f : files) {
-            double serialMs = Math.max(0.0001, medianTime(results, f, "SerialCPU"));
+            double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
             Map<String, Double> row = new LinkedHashMap<>();
             for (String m : methods) {
-                double t = medianTime(results, f, m);
-                row.put(m, t > 0 ? serialMs / t : 0.0);
+                double t = medianTime(r, f, m);
+                row.put(m, t > 0 ? serial / t : 0.0);
             }
             data.put(shortName(f), row);
         }
-        return groupedBarChart("Speedup em relação ao SerialCPU", "Amostra / Mundo Narrativo", "Speedup (vezes)", data, methods);
+
+        return barChart(
+            "2. Speedup em relação ao SerialCPU",
+            "Speedup = tempo_serial ÷ tempo_método.  Valor 2× = duas vezes mais rápido que serial.",
+            "Texto / Obra literária", "Speedup (×)",
+            data, methods, methodPalette(methods));
     }
 
-    // 4 — Throughput
-    private static BufferedImage chartThroughput(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results);
+    // ══════════════════════════════════════════════════════════════════════
+    //  BLOCO 2 — Impacto do número de núcleos (ParallelCPU)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 3. Tempo do ParallelCPU por número de threads — linha por texto.
+     * Mostra se mais threads sempre reduzem o tempo.
+     */
+    private static BufferedImage chart03_ThreadsTempo(List<BenchmarkResult> r) {
+        Map<String, List<PointXY>> series = new LinkedHashMap<>();
+        List<Color> colors = List.of(C_CPU4, C_VT, C_GPU, C_FORK);
+        int ci = 0;
+        for (String f : orderedFiles(r)) {
+            List<PointXY> pts = new ArrayList<>();
+            // Inclui SerialCPU como ponto base (threads=1) para contexto
+            double serialT = medianTime(r, f, "SerialCPU");
+            if (serialT > 0) pts.add(new PointXY(1, serialT, "Serial\n(ref.)"));
+
+            r.stream().filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+                .map(x -> x.threads).distinct().sorted()
+                .forEach(t -> pts.add(new PointXY(t,
+                    medianTimeByThreads(r, f, t), t + "t")));
+
+            if (pts.size() > 1) {
+                series.put(shortName(f), pts);
+            }
+        }
+        return lineChart(
+            "3. Impacto do número de threads — tempo de execução",
+            "Linha mais baixa = mais rápido.  Ponto 1 = SerialCPU como referência.",
+            "Número de threads", "Tempo mediano (ms)",
+            series, true, false, List.of(C_CPU4, C_VT, C_GPU));
+    }
+
+    /**
+     * 4. Speedup do ParallelCPU por número de threads.
+     * Uma linha por texto. Linha pontilhada = speedup ideal (linear).
+     * Mostra onde o ganho começa a saturar.
+     */
+    private static BufferedImage chart04_ThreadsSpeedup(List<BenchmarkResult> r) {
+        Map<String, List<PointXY>> series = new LinkedHashMap<>();
+        for (String f : orderedFiles(r)) {
+            double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
+            List<PointXY> pts = r.stream()
+                .filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+                .map(x -> x.threads).distinct().sorted()
+                .map(t -> new PointXY(t,
+                    serial / Math.max(0.0001, medianTimeByThreads(r, f, t)), t + "t"))
+                .collect(Collectors.toList());
+            if (!pts.isEmpty()) series.put(shortName(f), pts);
+        }
+
+        // Linha ideal baseada no max de threads disponível
+        int maxT = series.values().stream().flatMap(List::stream)
+            .mapToInt(p -> (int) p.x).max().orElse(8);
+        List<PointXY> ideal = new ArrayList<>();
+        Set<Integer> threadCounts = series.values().stream().flatMap(List::stream)
+            .map(p -> (int) p.x).collect(Collectors.toCollection(TreeSet::new));
+        for (int t : threadCounts) ideal.add(new PointXY(t, t, t + "t"));
+        series.put("Ideal (linear)", ideal);
+
+        return lineChart(
+            "4. Speedup do ParallelCPU por número de threads",
+            "Speedup ideal = crescimento linear com threads.  Desvio = overhead de sincronização.",
+            "Número de threads", "Speedup (×) vs SerialCPU",
+            series, true, true, List.of(C_CPU4, C_VT, C_GPU, new Color(255,255,80,160)));
+    }
+
+    /**
+     * 5. Eficiência paralela = speedup / threads.
+     * Valor ideal = 1,0 (100 % dos núcleos aproveitados).
+     * Demonstra a Lei de Amdahl: eficiência cai com mais threads.
+     */
+    private static BufferedImage chart05_EficienciaParalela(List<BenchmarkResult> r) {
+        Map<String, List<PointXY>> series = new LinkedHashMap<>();
+        for (String f : orderedFiles(r)) {
+            double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
+            List<PointXY> pts = r.stream()
+                .filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+                .map(x -> x.threads).distinct().sorted()
+                .map(t -> {
+                    double spd = serial / Math.max(0.0001, medianTimeByThreads(r, f, t));
+                    return new PointXY(t, spd / Math.max(1, t), t + "t");
+                })
+                .collect(Collectors.toList());
+            if (!pts.isEmpty()) series.put(shortName(f), pts);
+        }
+        return lineChart(
+            "5. Eficiência paralela (Lei de Amdahl)",
+            "Eficiência = speedup ÷ threads.  Valor ideal = 1,0.  Queda indica overhead ou porção serial.",
+            "Número de threads", "Eficiência paralela",
+            series, true, false, List.of(C_CPU4, C_VT, C_GPU));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  BLOCO 3 — Impacto do tamanho do texto
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 6. Escala: eixo X = palavras no texto, eixo Y = tempo mediano.
+     * Mostra como cada método cresce com o volume de dados.
+     * Métodos mais paralelos devem crescer mais devagar.
+     */
+    private static BufferedImage chart06_EscalaTamanho(List<BenchmarkResult> r) {
+        List<String> methods = repMethods(r);
+        Map<String, List<PointXY>> series = new LinkedHashMap<>();
+        for (String m : methods) {
+            List<PointXY> pts = orderedFiles(r).stream()
+                .map(f -> new PointXY(totalWords(r, f), medianTime(r, f, m), shortName(f)))
+                .filter(p -> p.y > 0)
+                .collect(Collectors.toList());
+            if (!pts.isEmpty()) series.put(m, pts);
+        }
+        return lineChart(
+            "6. Escalabilidade — tempo pelo tamanho do texto",
+            "Inclinação menor = escala melhor com volume.  Métodos paralelos devem ser mais planos.",
+            "Tamanho do texto (palavras)", "Tempo mediano (ms)",
+            series, false, false, methodPalette(methods));
+    }
+
+    /**
+     * 7. Tempo normalizado por 100 mil palavras.
+     * Remove o viés de tamanho: obras maiores naturalmente demoram mais.
+     * Mostra a "velocidade real" de cada método independente do volume.
+     */
+    private static BufferedImage chart07_TempoNormalizado(List<BenchmarkResult> r) {
+        List<String> methods = repMethods(r);
+        List<String> files   = orderedFiles(r);
+
         Map<String, Map<String, Double>> data = new LinkedHashMap<>();
         for (String f : files) {
-            long totalWords = totalWords(results, f);
+            long total = Math.max(1, totalWords(r, f));
             Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) {
-                double t = Math.max(0.0001, medianTime(results, f, m));
-                row.put(m, totalWords / t);
-            }
-            data.put(shortName(f), row);
+            for (String m : methods)
+                row.put(m, medianTime(r, f, m) / total * 100_000.0);
+            data.put(shortName(f) + "\n(" + String.format("%,d", total) + " pal.)", row);
         }
-        return groupedBarChart("Throughput — palavras processadas por milissegundo", "Amostra / Mundo Narrativo", "Palavras/ms", data, methods);
+
+        return barChart(
+            "7. Tempo normalizado por 100 mil palavras",
+            "Remove viés de tamanho.  Compara velocidade real entre textos de volumes diferentes.",
+            "Texto (total de palavras)", "ms por 100 mil palavras",
+            data, methods, methodPalette(methods));
     }
 
-    // 5 — Run variation: average time per run and method across all samples
-    private static BufferedImage chartRunVariation(List<BenchmarkResult> results) {
-        List<String> methods = orderedMethods(results);
-        List<String> runs = results.stream().map(r -> "Run " + r.run).distinct().sorted().collect(Collectors.toList());
+    // ══════════════════════════════════════════════════════════════════════
+    //  BLOCO 4 — Estabilidade e variabilidade das 3 execuções
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 8. Tempo das 3 execuções individuais — uma barra por run, por método.
+     * Permite verificar se os resultados são estáveis e reproduzíveis.
+     * Usa apenas o maior texto para evitar sobrecarga visual.
+     */
+    private static BufferedImage chart08_TresExecucoes(List<BenchmarkResult> r) {
+        // Usa o maior texto (maior nº de palavras) para maximizar diferença entre métodos
+        String biggestFile = orderedFiles(r).stream()
+            .max(Comparator.comparingLong(f -> totalWords(r, f)))
+            .orElse(orderedFiles(r).get(0));
+
+        List<String> methods  = repMethods(r);
+        List<String> runLabels = List.of("Run 1", "Run 2", "Run 3");
+
         Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String runLabel : runs) {
-            int run = Integer.parseInt(runLabel.replace("Run ", ""));
+        for (String m : methods) {
             Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) {
-                row.put(m, average(results.stream()
-                        .filter(r -> r.run == run && r.method.equals(m))
-                        .map(r -> r.timeMs).collect(Collectors.toList())));
-            }
-            data.put(runLabel, row);
+            List<BenchmarkResult> methodResults = r.stream()
+                .filter(x -> x.file.equals(biggestFile) && x.method.equals(m))
+                .sorted(Comparator.comparingInt(x -> x.run))
+                .collect(Collectors.toList());
+            for (int i = 0; i < Math.min(3, methodResults.size()); i++)
+                row.put(runLabels.get(i), methodResults.get(i).timeMs);
+            data.put(shortMethodLabel(m), row);
         }
-        return groupedBarChart("Variação entre as 3 execuções", "Execução", "Tempo médio (ms)", data, methods);
+
+        List<Color> runColors = List.of(
+            new Color(0x6C8EF5), new Color(0x4EC994), new Color(0xF5A623));
+
+        return barChart(
+            "8. Tempo das 3 execuções individuais — " + shortName(biggestFile),
+            "Barras próximas = resultado estável e reproduzível.  Variação grande = instabilidade.",
+            "Método", "Tempo de execução (ms)",
+            data, runLabels, runColors);
     }
 
-    // 6 — Mean with standard deviation per method and sample
-    private static BufferedImage chartMeanStdDev(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results);
-        Map<String, Map<String, Double>> means = new LinkedHashMap<>();
+    /**
+     * 9. Média ± desvio padrão das 3 execuções.
+     * A barra de erro mostra a dispersão dos resultados.
+     * Desvio pequeno em relação à média = método estável.
+     */
+    private static BufferedImage chart09_MediaDesvio(List<BenchmarkResult> r) {
+        List<String> methods = repMethods(r);
+        List<String> files   = orderedFiles(r);
+
+        Map<String, Map<String, Double>> means  = new LinkedHashMap<>();
         Map<String, Map<String, Double>> errors = new LinkedHashMap<>();
 
         for (String f : files) {
-            Map<String, Double> meanRow = new LinkedHashMap<>();
-            Map<String, Double> errRow = new LinkedHashMap<>();
+            Map<String, Double> mRow = new LinkedHashMap<>();
+            Map<String, Double> eRow = new LinkedHashMap<>();
             for (String m : methods) {
-                List<Double> values = times(results, f, m);
-                meanRow.put(m, average(values));
-                errRow.put(m, stddev(values));
+                List<Double> ts = times(r, f, m);
+                mRow.put(m, avg(ts));
+                eRow.put(m, stddev(ts));
             }
-            means.put(shortName(f), meanRow);
-            errors.put(shortName(f), errRow);
+            means.put(shortName(f), mRow);
+            errors.put(shortName(f), eRow);
         }
-        return groupedBarChart("Tempo médio com desvio padrão", "Amostra / Mundo Narrativo", "Tempo (ms)", means, methods, errors);
+
+        return barChartWithError(
+            "9. Média e desvio padrão das 3 execuções",
+            "Barra de erro = ± 1 desvio padrão.  Erro pequeno vs. média = método estável.",
+            "Texto / Obra literária", "Tempo médio (ms)",
+            means, errors, methods, methodPalette(methods));
     }
 
-    // 7 — Size impact: x = total words, y = median time
-    private static BufferedImage chartSizeImpact(List<BenchmarkResult> results) {
-        List<String> methods = orderedMethods(results);
-        Map<String, List<PointValue>> series = new LinkedHashMap<>();
-        for (String m : methods) {
-            List<PointValue> points = new ArrayList<>();
-            for (String f : orderedFiles(results)) {
-                points.add(new PointValue(totalWords(results, f), medianTime(results, f, m), shortName(f)));
-            }
-            series.put(m, points);
-        }
-        return lineChart("Impacto do tamanho do texto no tempo", "Total de palavras", "Tempo mediano (ms)", series, false);
-    }
+    /**
+     * 10. GPU vs melhor CPU paralela vs SerialCPU.
+     * Apenas 3 séries — máxima clareza para a discussão da GPU.
+     * Gráfico de destaque para o relatório.
+     */
+    private static BufferedImage chart10_GpuVsCpu(List<BenchmarkResult> r) {
+        String gpuMethod = gpuLabel(r);
+        List<String> series  = List.of("SerialCPU", "Melhor CPU paralela", gpuMethod);
+        List<Color>  palette = List.of(C_SERIAL, C_CPU4, C_GPU);
+        List<String> files   = orderedFiles(r);
 
-    // 8 — Normalized time per 100k words
-    private static BufferedImage chartNormalized100k(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results);
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            long total = Math.max(1, totalWords(results, f));
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) {
-                row.put(m, medianTime(results, f, m) / total * 100_000.0);
-            }
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Tempo normalizado por 100 mil palavras", "Amostra / Mundo Narrativo", "ms / 100 mil palavras", data, methods);
-    }
-
-    // 9 — CPU speedup by number of threads
-    private static BufferedImage chartCpuSpeedupThreads(List<BenchmarkResult> results) {
-        Map<String, List<PointValue>> series = new LinkedHashMap<>();
-        for (String f : orderedFiles(results)) {
-            double serial = Math.max(0.0001, medianTime(results, f, "SerialCPU"));
-            List<PointValue> points = results.stream()
-                    .filter(r -> r.file.equals(f) && r.method.startsWith("ParallelCPU"))
-                    .map(r -> r.threads)
-                    .distinct()
-                    .sorted()
-                    .map(t -> new PointValue(t, serial / Math.max(0.0001, medianTimeByThreads(results, f, t)), t + "t"))
-                    .collect(Collectors.toList());
-            series.put(shortName(f), points);
-        }
-        return lineChart("Speedup da CPU paralela por número de threads", "Threads", "Speedup (vezes)", series, true);
-    }
-
-    // 10 — Parallel efficiency by threads
-    private static BufferedImage chartParallelEfficiency(List<BenchmarkResult> results) {
-        Map<String, List<PointValue>> series = new LinkedHashMap<>();
-        for (String f : orderedFiles(results)) {
-            double serial = Math.max(0.0001, medianTime(results, f, "SerialCPU"));
-            List<PointValue> points = results.stream()
-                    .filter(r -> r.file.equals(f) && r.method.startsWith("ParallelCPU"))
-                    .map(r -> r.threads)
-                    .distinct()
-                    .sorted()
-                    .map(t -> {
-                        double speedup = serial / Math.max(0.0001, medianTimeByThreads(results, f, t));
-                        return new PointValue(t, speedup / Math.max(1, t), t + "t");
-                    })
-                    .collect(Collectors.toList());
-            series.put(shortName(f), points);
-        }
-        return lineChart("Eficiência paralela da CPU", "Threads", "Eficiência = speedup / threads", series, true);
-    }
-
-    // 11 — Serial vs best ParallelCPU vs GPU
-    private static BufferedImage chartCpuVsGpu(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> series = List.of("SerialCPU", "Melhor ParallelCPU", gpuLabel(results));
         Map<String, Map<String, Double>> data = new LinkedHashMap<>();
         for (String f : files) {
             Map<String, Double> row = new LinkedHashMap<>();
-            row.put("SerialCPU", medianTime(results, f, "SerialCPU"));
-            row.put("Melhor ParallelCPU", bestCpuStrategyMedian(results, f));
-            row.put(gpuLabel(results), medianTime(results, f, gpuLabel(results)));
+            row.put("SerialCPU",           medianTime(r, f, "SerialCPU"));
+            row.put("Melhor CPU paralela", bestParallelMedian(r, f));
+            row.put(gpuMethod,             medianTime(r, f, gpuMethod));
             data.put(shortName(f), row);
         }
-        return groupedBarChart("Comparação: SerialCPU vs melhor CPU paralela vs GPU", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, series);
+
+        return barChart(
+            "10. SerialCPU vs melhor CPU paralela vs GPU/OpenCL",
+            "Compara os três paradigmas centrais do trabalho.  GPU pode ter overhead de transferência.",
+            "Texto / Obra literária", "Tempo mediano (ms)",
+            data, series, palette);
     }
 
-    // 12 — Ranking by narrative world: winner only
-    private static BufferedImage chartRankingByWorld(List<BenchmarkResult> results) {
-        List<RankingRow> rows = new ArrayList<>();
-        for (String f : orderedFiles(results)) {
-            String winner = null;
-            double best = Double.MAX_VALUE;
-            for (String m : orderedMethods(results)) {
-                double t = medianTime(results, f, m);
-                if (t > 0 && t < best) {
-                    best = t;
-                    winner = m;
-                }
-            }
-            rows.add(new RankingRow(shortName(f), winner == null ? "-" : winner, best == Double.MAX_VALUE ? 0 : best));
-        }
-        return rankingChart("Ranking dos algoritmos por mundo narrativo", rows);
+    // ══════════════════════════════════════════════════════════════════════
+    //  Primitivos de desenho
+    // ══════════════════════════════════════════════════════════════════════
+
+    private static BufferedImage barChart(String title, String subtitle,
+            String xLabel, String yLabel,
+            Map<String, Map<String, Double>> data,
+            List<String> series, List<Color> palette) {
+        return barChartWithError(title, subtitle, xLabel, yLabel, data, null, series, palette);
     }
 
-    // 13 — Density of searched word per 10k words
-    private static BufferedImage chartWordDensity(List<BenchmarkResult> results) {
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        List<String> series = List.of("densidade");
-        for (String f : orderedFiles(results)) {
-            BenchmarkResult r = results.stream().filter(x -> x.file.equals(f) && x.method.equals("SerialCPU")).findFirst()
-                    .orElse(results.stream().filter(x -> x.file.equals(f)).findFirst().orElse(null));
-            if (r == null) continue;
-            double density = r.totalWords > 0 ? (r.occurrences / (double) r.totalWords) * 10_000.0 : 0;
-            Map<String, Double> row = new LinkedHashMap<>();
-            row.put("densidade", density);
-            data.put(shortName(f) + " (" + r.wordSearched + ")", row);
-        }
-        return groupedBarChart("Densidade da palavra-tema por obra", "Obra / Palavra", "Ocorrências a cada 10 mil palavras", data, series);
-    }
+    private static BufferedImage barChartWithError(String title, String subtitle,
+            String xLabel, String yLabel,
+            Map<String, Map<String, Double>> data,
+            Map<String, Map<String, Double>> errData,
+            List<String> series, List<Color> palette) {
 
-    // 14 — Best strategy of each family per text
-    private static BufferedImage chartBestByFamily(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> families = orderedFamilies(results);
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String fam : families) {
-                row.put(familyLabel(fam), bestMedianByFamily(results, f, fam));
-            }
-            data.put(shortName(f), row);
-        }
-        List<String> labels = families.stream().map(ChartGenerator::familyLabel).collect(Collectors.toList());
-        return groupedBarChart("Melhor desempenho por família de estratégia", "Amostra / Mundo Narrativo", "Melhor tempo mediano (ms)", data, labels);
-    }
-
-    // 15 — CPU parallel branch: manual threads, fork/join and parallel stream
-    private static BufferedImage chartCpuStrategyBranch(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results).stream()
-                .filter(m -> m.startsWith("ParallelCPU") || m.startsWith("ForkJoin") || m.startsWith("ParallelStream"))
-                .collect(Collectors.toList());
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) row.put(m, medianTime(results, f, m));
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Vertente CPU paralela — estratégias", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, methods);
-    }
-
-    // 16 — Virtual threads branch: compare chunk granularities
-    private static BufferedImage chartVirtualThreadsBranch(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        List<String> methods = orderedMethods(results).stream()
-                .filter(m -> m.startsWith("VirtualThreads"))
-                .collect(Collectors.toList());
-        if (methods.isEmpty()) {
-            Map<String, Map<String, Double>> empty = new LinkedHashMap<>();
-            empty.put("Sem dados", Map.of("VirtualThreads", 0.0));
-            return groupedBarChart("Vertente Virtual Threads", "Amostra", "Tempo mediano (ms)", empty, List.of("VirtualThreads"));
-        }
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            for (String m : methods) row.put(m, medianTime(results, f, m));
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Vertente Virtual Threads — granularidade", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, methods);
-    }
-
-    // 17 — GPU branch compared with serial, best CPU and best virtual-thread strategy
-    private static BufferedImage chartGpuBranch(List<BenchmarkResult> results) {
-        List<String> files = orderedFiles(results);
-        String gpu = gpuLabel(results);
-        List<String> series = List.of("SerialCPU", "Melhor CPU paralela", "Melhor VirtualThreads", gpu);
-        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
-        for (String f : files) {
-            Map<String, Double> row = new LinkedHashMap<>();
-            row.put("SerialCPU", medianTime(results, f, "SerialCPU"));
-            row.put("Melhor CPU paralela", bestCpuStrategyMedian(results, f));
-            row.put("Melhor VirtualThreads", bestMedianByFamily(results, f, "VIRTUAL_THREADS"));
-            row.put(gpu, medianTime(results, f, gpu));
-            data.put(shortName(f), row);
-        }
-        return groupedBarChart("Vertente GPU/OpenCL vs melhores estratégias", "Amostra / Mundo Narrativo", "Tempo mediano (ms)", data, series);
-    }
-
-    // ── Drawing helpers ────────────────────────────────────────────────────
-
-    private static BufferedImage groupedBarChart(String title, String xLabel, String yLabel,
-                                                 Map<String, Map<String, Double>> data,
-                                                 List<String> series) {
-        return groupedBarChart(title, xLabel, yLabel, data, series, null);
-    }
-
-    private static BufferedImage groupedBarChart(String title, String xLabel, String yLabel,
-                                                 Map<String, Map<String, Double>> data,
-                                                 List<String> series,
-                                                 Map<String, Map<String, Double>> errorData) {
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = begin(img, title);
+        Graphics2D g = setup(img, title, subtitle);
 
-        int marginL = 95, marginR = 35, marginT = 70, marginB = 130;
-        int plotW = W - marginL - marginR;
-        int plotH = H - marginT - marginB;
+        int mL = 115, mR = 36, mT = 100, mB = 190;
+        int pW = W - mL - mR, pH = H - mT - mB;
 
-        double maxVal = data.values().stream().flatMap(m -> m.entrySet().stream())
-                .mapToDouble(e -> e.getValue() + (errorData == null ? 0.0 : errorData.getOrDefault(findGroup(data, e), Collections.emptyMap()).getOrDefault(e.getKey(), 0.0)))
-                .max().orElse(1.0);
-        maxVal = Math.max(1e-9, maxVal * 1.18);
+        // Max Y with error bars considered
+        double maxVal = data.values().stream()
+            .flatMap(m -> m.values().stream()).mapToDouble(v -> v).max().orElse(1);
+        if (errData != null) {
+            for (Map.Entry<String, Map<String,Double>> fe : errData.entrySet()) {
+                Map<String,Double> mMap = data.getOrDefault(fe.getKey(), Map.of());
+                for (Map.Entry<String,Double> ee : fe.getValue().entrySet())
+                    maxVal = Math.max(maxVal, mMap.getOrDefault(ee.getKey(), 0.0) + ee.getValue());
+            }
+        }
+        maxVal = Math.max(1e-9, maxVal * 1.22);
 
-        drawGrid(g, marginL, marginT, plotW, plotH, maxVal);
+        drawGrid(g, mL, mT, pW, pH, maxVal);
 
         List<String> groups = new ArrayList<>(data.keySet());
-        int nGroups = Math.max(1, groups.size());
-        int nSeries = Math.max(1, series.size());
-        int groupW = plotW / nGroups;
-        int barW = Math.max(3, Math.min(28, (groupW - 14) / nSeries));
-        int groupInnerW = barW * nSeries;
+        int nG = groups.size(), nS = series.size();
+        int groupW = pW / Math.max(nG, 1);
+        int gap    = 5;
+        int barW   = Math.max(12, Math.min(52, (groupW - 20 - gap * (nS - 1)) / Math.max(nS, 1)));
+        int innerW = barW * nS + gap * (nS - 1);
 
-        for (int gi = 0; gi < groups.size(); gi++) {
-            String group = groups.get(gi);
-            Map<String, Double> row = data.getOrDefault(group, Collections.emptyMap());
-            Map<String, Double> errRow = errorData == null ? Collections.emptyMap() : errorData.getOrDefault(group, Collections.emptyMap());
-            int groupStart = marginL + gi * groupW + (groupW - groupInnerW) / 2;
+        for (int gi = 0; gi < nG; gi++) {
+            String grp = groups.get(gi);
+            Map<String,Double> row  = data.getOrDefault(grp, Map.of());
+            Map<String,Double> eRow = errData == null ? Map.of() : errData.getOrDefault(grp, Map.of());
+            int gx = mL + gi * groupW + (groupW - innerW) / 2;
 
-            for (int si = 0; si < series.size(); si++) {
-                String ser = series.get(si);
-                double val = row.getOrDefault(ser, 0.0);
-                int barH = (int) Math.round(val / maxVal * plotH);
-                int x = groupStart + si * barW;
-                int y = marginT + plotH - barH;
-                Color c = PALETTE[si % PALETTE.length];
+            for (int si = 0; si < nS; si++) {
+                String m  = series.get(si);
+                double val = row.getOrDefault(m, 0.0);
+                int bH = (int) Math.round(val / maxVal * pH);
+                int x  = gx + si * (barW + gap);
+                int y  = mT + pH - bH;
+                Color c = palette.get(si % palette.size());
+
+                // Bar with rounded top
                 g.setColor(c);
-                g.fillRoundRect(x, y, Math.max(1, barW - 3), barH, 5, 5);
+                g.fillRoundRect(x, y, barW, Math.max(2, bH), 6, 6);
+                // Sharp bottom corners
+                if (bH > 6) g.fillRect(x, y + 6, barW, Math.max(0, bH - 6));
                 g.setColor(c.darker());
-                g.drawRoundRect(x, y, Math.max(1, barW - 3), barH, 5, 5);
+                g.drawRoundRect(x, y, barW, Math.max(2, bH), 6, 6);
 
-                if (errorData != null && errRow.containsKey(ser)) {
-                    double err = errRow.get(ser);
-                    int errH = (int) Math.round(err / maxVal * plotH);
-                    int cx = x + Math.max(1, barW - 3) / 2;
-                    int errTop = Math.max(marginT, y - errH);
+                // Error bar
+                if (errData != null && eRow.containsKey(m)) {
+                    double err = eRow.get(m);
+                    int eH = (int) Math.round(err / maxVal * pH);
+                    int cx = x + barW / 2;
+                    int et = Math.max(mT + 1, y - eH);
                     g.setColor(TEXT);
-                    g.drawLine(cx, errTop, cx, y);
-                    g.drawLine(cx - 4, errTop, cx + 4, errTop);
-                    g.drawLine(cx - 4, y, cx + 4, y);
+                    g.setStroke(new BasicStroke(2.2f));
+                    g.drawLine(cx, et, cx, y);
+                    g.drawLine(cx - 6, et, cx + 6, et);
+                    g.drawLine(cx - 6, y,  cx + 6, y);
+                    g.setStroke(new BasicStroke(1f));
                 }
 
-                if (barH > 22 && barW >= 18) {
-                    g.setColor(Color.WHITE);
-                    g.setFont(new Font("SansSerif", Font.PLAIN, 9));
-                    String v = compact(val);
-                    int vw = g.getFontMetrics().stringWidth(v);
-                    if (vw < barW - 3) g.drawString(v, x + (barW - 3 - vw) / 2, y + 13);
+                // Value label above bar
+                if (val > 0 && bH > 12) {
+                    String lbl = compact(val);
+                    g.setFont(new Font("SansSerif", Font.BOLD, 10));
+                    FontMetrics fm = g.getFontMetrics();
+                    int lw = fm.stringWidth(lbl);
+                    g.setColor(TEXT);
+                    if (lw + 4 <= barW) {
+                        g.drawString(lbl, x + (barW - lw) / 2, y - 4);
+                    } else {
+                        Graphics2D gr2 = (Graphics2D) g.create();
+                        gr2.setFont(new Font("SansSerif", Font.BOLD, 9));
+                        gr2.setColor(DIMMED);
+                        gr2.translate(x + barW / 2, y - 3);
+                        gr2.rotate(-Math.PI / 2);
+                        gr2.drawString(lbl, -lw, gr2.getFontMetrics().getAscent() / 2);
+                        gr2.dispose();
+                    }
                 }
             }
-
-            drawCenteredPossiblyMultiline(g, group, marginL + gi * groupW + groupW / 2,
-                    marginT + plotH + 20, groupW - 6);
+            drawGroupLabel(g, grp, mL + gi * groupW + groupW / 2, mT + pH + 20, groupW - 6);
         }
 
-        drawAxesAndLabels(g, marginL, marginT, plotW, plotH, xLabel, yLabel, marginB);
-        drawLegend(g, series, marginL, H - 62);
+        drawAxes(g, mL, mT, pW, pH, xLabel, yLabel, mB);
+        drawLegend(g, series, palette, mL, H - 90);
         g.dispose();
         return img;
     }
 
-    private static BufferedImage lineChart(String title, String xLabel, String yLabel,
-                                           Map<String, List<PointValue>> series, boolean integerX) {
-        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = begin(img, title);
+    private static BufferedImage lineChart(String title, String subtitle,
+            String xLabel, String yLabel,
+            Map<String, List<PointXY>> series,
+            boolean integerX, boolean idealLine,
+            List<Color> palette) {
 
-        int marginL = 95, marginR = 45, marginT = 70, marginB = 120;
-        int plotW = W - marginL - marginR;
-        int plotH = H - marginT - marginB;
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = setup(img, title, subtitle);
+
+        int mL = 115, mR = 260, mT = 100, mB = 130;
+        int pW = W - mL - mR, pH = H - mT - mB;
 
         double minX = series.values().stream().flatMap(List::stream).mapToDouble(p -> p.x).min().orElse(0);
         double maxX = series.values().stream().flatMap(List::stream).mapToDouble(p -> p.x).max().orElse(1);
@@ -445,363 +527,445 @@ public class ChartGenerator {
         if (Math.abs(maxX - minX) < 1e-9) maxX = minX + 1;
         maxY = Math.max(1e-9, maxY * 1.18);
 
-        drawGrid(g, marginL, marginT, plotW, plotH, maxY);
+        drawGrid(g, mL, mT, pW, pH, maxY);
+
+        // Ideal linear reference (for speedup chart)
+        if (idealLine) {
+            g.setColor(new Color(255, 220, 60, 70));
+            g.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                    10f, new float[]{10f, 6f}, 0f));
+            int ix1 = mL, iy1 = mT + pH;
+            int ix2 = mL + (int) Math.round((maxX - minX) / (maxX - minX) * pW);
+            int iy2 = mT + pH - (int) Math.round(maxX / maxY * pH);
+            g.drawLine(ix1, iy1, ix2, Math.max(mT, iy2));
+            g.setStroke(new BasicStroke(1f));
+        }
+
+        // Efficiency = 1 reference
+        if (yLabel.contains("ficiência") || yLabel.contains("Eficiência")) {
+            int refY = mT + pH - (int) Math.round(1.0 / maxY * pH);
+            if (refY > mT && refY < mT + pH) {
+                g.setColor(new Color(255, 220, 60, 70));
+                g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                        10f, new float[]{8f, 5f}, 0f));
+                g.drawLine(mL, refY, mL + pW, refY);
+                g.setFont(new Font("SansSerif", Font.ITALIC, 11));
+                g.setColor(new Color(255, 220, 60, 150));
+                g.drawString("ideal = 1,0", mL + pW + 8, refY + 4);
+                g.setStroke(new BasicStroke(1f));
+            }
+        }
+
+        float[][] dashes = {null, {14f,6f}, {4f,6f}, {14f,6f,4f,6f}, {18f,6f}};
+
+        // Pass 1: lines
+        record EndLabel(String name, Color col, int x, int y, double val) {}
+        List<EndLabel> ends = new ArrayList<>();
 
         int si = 0;
-        for (Map.Entry<String, List<PointValue>> entry : series.entrySet()) {
-            List<PointValue> points = new ArrayList<>(entry.getValue());
-            points.sort(Comparator.comparingDouble(p -> p.x));
-            Color c = PALETTE[si % PALETTE.length];
+        for (Map.Entry<String, List<PointXY>> e : series.entrySet()) {
+            if (e.getKey().equals("Ideal (linear)")) { si++; continue; }
+            List<PointXY> pts = sorted(e.getValue());
+            Color c = palette.get(si % palette.size());
+            float[] dash = dashes[si % dashes.length];
             g.setColor(c);
-            g.setStroke(new BasicStroke(2.2f));
-            int lastX = Integer.MIN_VALUE, lastY = Integer.MIN_VALUE;
-            for (PointValue p : points) {
-                int x = marginL + (int) Math.round((p.x - minX) / (maxX - minX) * plotW);
-                int y = marginT + plotH - (int) Math.round(p.y / maxY * plotH);
-                if (lastX != Integer.MIN_VALUE) g.drawLine(lastX, lastY, x, y);
-                g.fillOval(x - 5, y - 5, 10, 10);
-                lastX = x; lastY = y;
+            g.setStroke(dash == null
+                ? new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+                : new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10f, dash, 0f));
+
+            int px = Integer.MIN_VALUE, py = Integer.MIN_VALUE;
+            for (PointXY p : pts) {
+                int x = mL + (int) Math.round((p.x - minX) / (maxX - minX) * pW);
+                int y = mT + pH - (int) Math.round(p.y / maxY * pH);
+                if (px != Integer.MIN_VALUE) g.drawLine(px, py, x, y);
+                px = x; py = y;
+            }
+            if (!pts.isEmpty()) {
+                PointXY last = pts.get(pts.size() - 1);
+                int ex = mL + (int) Math.round((last.x - minX) / (maxX - minX) * pW);
+                int ey = mT + pH - (int) Math.round(last.y / maxY * pH);
+                ends.add(new EndLabel(e.getKey(), c, ex, ey, last.y));
             }
             si++;
         }
 
-        // x tick labels
-        g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        g.setColor(TEXT_DIM);
+        // Ideal dashed line on top
+        if (idealLine && series.containsKey("Ideal (linear)")) {
+            List<PointXY> pts = sorted(series.get("Ideal (linear)"));
+            g.setColor(new Color(255, 220, 60, 130));
+            g.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                    10f, new float[]{10f, 6f}, 0f));
+            int px = Integer.MIN_VALUE, py = Integer.MIN_VALUE;
+            for (PointXY p : pts) {
+                int x = mL + (int) Math.round((p.x - minX) / (maxX - minX) * pW);
+                int y = mT + pH - (int) Math.round(Math.min(p.y, maxY * 0.98) / maxY * pH);
+                if (px != Integer.MIN_VALUE) g.drawLine(px, py, x, y);
+                px = x; py = y;
+            }
+            g.setStroke(new BasicStroke(1f));
+            g.setFont(new Font("SansSerif", Font.ITALIC, 12));
+            g.setColor(new Color(255, 220, 60, 160));
+            g.drawString("Ideal (linear)", mL + pW + 8, mT + 20);
+        }
+
+        // Pass 2: dots
+        g.setStroke(new BasicStroke(1.5f));
+        si = 0;
+        for (Map.Entry<String, List<PointXY>> e : series.entrySet()) {
+            if (e.getKey().equals("Ideal (linear)")) { si++; continue; }
+            Color c = palette.get(si % palette.size());
+            for (PointXY p : e.getValue()) {
+                int x = mL + (int) Math.round((p.x - minX) / (maxX - minX) * pW);
+                int y = mT + pH - (int) Math.round(p.y / maxY * pH);
+                g.setColor(BG);   g.fillOval(x-7, y-7, 14, 14);
+                g.setColor(c);    g.fillOval(x-5, y-5, 10, 10);
+                g.setColor(Color.WHITE); g.fillOval(x-2, y-2, 4, 4);
+            }
+            si++;
+        }
+
+        // X-axis tick labels
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g.setColor(DIMMED);
         if (integerX) {
-            Set<Integer> ticks = series.values().stream().flatMap(List::stream).map(p -> (int) Math.round(p.x))
-                    .collect(Collectors.toCollection(TreeSet::new));
+            TreeSet<Integer> ticks = series.values().stream().flatMap(List::stream)
+                .map(p -> (int) Math.round(p.x))
+                .collect(Collectors.toCollection(TreeSet::new));
             for (int t : ticks) {
-                int x = marginL + (int) Math.round((t - minX) / (maxX - minX) * plotW);
+                int x = mL + (int) Math.round((t - minX) / (maxX - minX) * pW);
                 String lbl = String.valueOf(t);
-                g.drawString(lbl, x - g.getFontMetrics().stringWidth(lbl) / 2, marginT + plotH + 18);
+                g.drawString(lbl, x - g.getFontMetrics().stringWidth(lbl)/2, mT + pH + 22);
             }
         } else {
-            for (List<PointValue> points : series.values()) {
-                for (PointValue p : points) {
-                    int x = marginL + (int) Math.round((p.x - minX) / (maxX - minX) * plotW);
-                    g.drawString(p.label, x - g.getFontMetrics().stringWidth(p.label) / 2, marginT + plotH + 18);
-                }
-                break;
-            }
+            // Use first series' labels (book names)
+            final double fMinX = minX, fMaxX = maxX;
+            final int fmL = mL, fmT = mT, fpW = pW, fpH = pH;
+            series.values().stream().findFirst().ifPresent(pts ->
+                pts.forEach(p -> {
+                    int x = fmL + (int) Math.round((p.x - fMinX) / (fMaxX - fMinX) * fpW);
+                    g.drawString(p.label, x - g.getFontMetrics().stringWidth(p.label)/2, fmT + fpH + 22);
+                }));
         }
 
-        drawAxesAndLabels(g, marginL, marginT, plotW, plotH, xLabel, yLabel, marginB);
-        drawLegend(g, new ArrayList<>(series.keySet()), marginL, H - 62);
-        g.dispose();
-        return img;
-    }
-
-    private static BufferedImage rankingChart(String title, List<RankingRow> rows) {
-        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = begin(img, title);
-
-        int x0 = 130, y0 = 110, barH = 52, gap = 32;
-        double max = rows.stream().mapToDouble(r -> r.time).max().orElse(1) * 1.15;
-        int plotW = W - x0 - 90;
-
-        g.setFont(new Font("SansSerif", Font.BOLD, 13));
-        g.setColor(TEXT_DIM);
-        g.drawString("Menor tempo mediano vence cada mundo narrativo", x0, 74);
-
-        for (int i = 0; i < rows.size(); i++) {
-            RankingRow r = rows.get(i);
-            int y = y0 + i * (barH + gap);
-            int w = (int) Math.round(r.time / max * plotW);
-            Color c = PALETTE[i % PALETTE.length];
-            g.setColor(TEXT_DIM);
+        // End-of-line labels with collision avoidance
+        ends.sort(Comparator.comparingInt(EndLabel::y));
+        int prevY = Integer.MIN_VALUE;
+        for (EndLabel ep : ends) {
+            int ly = Math.max(ep.y(), prevY == Integer.MIN_VALUE ? ep.y() : prevY + 20);
+            ly = Math.min(ly, mT + pH - 4);
             g.setFont(new Font("SansSerif", Font.BOLD, 13));
-            g.drawString(r.world, 30, y + 30);
-            g.setColor(c);
-            g.fillRoundRect(x0, y, Math.max(2, w), barH, 12, 12);
-            g.setColor(c.darker());
-            g.drawRoundRect(x0, y, Math.max(2, w), barH, 12, 12);
+            g.setColor(ep.col());
+            g.fillRoundRect(mL + pW + 14, ly - 11, 13, 12, 3, 3);
             g.setColor(TEXT);
-            g.setFont(new Font("SansSerif", Font.BOLD, 13));
-            String label = String.format(Locale.US, "1º %s — %.4f ms", r.method, r.time);
-            g.drawString(label, x0 + 12, y + 31);
+            g.drawString(ep.name() + "  " + compact(ep.val()), mL + pW + 32, ly);
+            prevY = ly;
         }
 
+        drawAxes(g, mL, mT, pW, pH, xLabel, yLabel, mB);
         g.dispose();
         return img;
     }
 
-    private static Graphics2D begin(BufferedImage img, String title) {
+    // ══════════════════════════════════════════════════════════════════════
+    //  Utilitários de desenho
+    // ══════════════════════════════════════════════════════════════════════
+
+    private static Graphics2D setup(BufferedImage img, String title, String subtitle) {
         Graphics2D g = img.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g.setColor(BG);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
+
+        g.setPaint(new GradientPaint(0, 0, BG, 0, H, BG_PLOT));
         g.fillRect(0, 0, W, H);
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 22));
         g.setColor(TEXT);
-        g.setFont(new Font("SansSerif", Font.BOLD, 18));
         FontMetrics fm = g.getFontMetrics();
         g.drawString(title, (W - fm.stringWidth(title)) / 2, 38);
+
+        g.setFont(new Font("SansSerif", Font.ITALIC, 13));
+        g.setColor(DIMMED);
+        fm = g.getFontMetrics();
+        g.drawString(subtitle, (W - fm.stringWidth(subtitle)) / 2, 60);
+
+        g.setColor(new Color(255, 255, 255, 20));
+        g.fillRect(40, 74, W - 80, 1);
         return g;
     }
 
     private static void drawGrid(Graphics2D g, int x, int y, int w, int h, double maxVal) {
-        g.setStroke(new BasicStroke(1f));
-        g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        int ticks = 5;
+        int ticks = 6;
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         for (int i = 0; i <= ticks; i++) {
             int yy = y + h - (int) Math.round((double) i / ticks * h);
-            g.setColor(GRID);
+            g.setColor(i == 0 ? GRID_AX : GRID);
+            g.setStroke(i == 0
+                ? new BasicStroke(1.6f)
+                : new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[]{8f,5f}, 0f));
             g.drawLine(x, yy, x + w, yy);
-            g.setColor(TEXT_DIM);
+            g.setStroke(new BasicStroke(1f));
+            g.setColor(DIMMED);
             String lbl = compact(maxVal * i / ticks);
-            g.drawString(lbl, x - g.getFontMetrics().stringWidth(lbl) - 8, yy + 4);
+            g.drawString(lbl, x - g.getFontMetrics().stringWidth(lbl) - 8, yy + 5);
         }
     }
 
-    private static void drawAxesAndLabels(Graphics2D g, int x, int y, int w, int h, String xLabel, String yLabel, int marginB) {
-        g.setColor(TEXT_DIM);
+    private static void drawAxes(Graphics2D g, int x, int y, int w, int h,
+            String xLabel, String yLabel, int mB) {
+        g.setColor(GRID_AX);
+        g.setStroke(new BasicStroke(1.8f));
         g.drawLine(x, y, x, y + h);
         g.drawLine(x, y + h, x + w, y + h);
-        g.setFont(new Font("SansSerif", Font.BOLD, 12));
+        g.setStroke(new BasicStroke(1f));
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 14));
         g.setColor(TEXT);
-        g.drawString(xLabel, x + w / 2 - g.getFontMetrics().stringWidth(xLabel) / 2, H - marginB + 42);
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(xLabel, x + w/2 - fm.stringWidth(xLabel)/2, H - mB + 46);
+
         Graphics2D gr = (Graphics2D) g.create();
-        gr.rotate(-Math.PI / 2);
-        gr.setFont(new Font("SansSerif", Font.BOLD, 12));
+        gr.setFont(new Font("SansSerif", Font.BOLD, 14));
         gr.setColor(TEXT);
-        gr.drawString(yLabel, -(y + h / 2 + gr.getFontMetrics().stringWidth(yLabel) / 2), 19);
+        gr.rotate(-Math.PI / 2);
+        gr.drawString(yLabel, -(y + h/2 + gr.getFontMetrics().stringWidth(yLabel)/2), 24);
         gr.dispose();
     }
 
-    private static void drawLegend(Graphics2D g, List<String> series, int x, int y) {
-        int legendX = x;
-        int legendY = y;
-        g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        for (int si = 0; si < series.size(); si++) {
-            String label = series.get(si);
-            Color c = PALETTE[si % PALETTE.length];
+    private static void drawLegend(Graphics2D g, List<String> series, List<Color> palette,
+            int startX, int y) {
+        int lx = startX;
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        for (int i = 0; i < series.size(); i++) {
+            Color c = palette.get(i % palette.size());
+            String lbl = shortMethodLabel(series.get(i));
+            FontMetrics fm = g.getFontMetrics();
             g.setColor(c);
-            g.fillRoundRect(legendX, legendY - 11, 14, 12, 3, 3);
+            g.fillRoundRect(lx, y - 12, 15, 13, 4, 4);
             g.setColor(TEXT);
-            g.drawString(label, legendX + 19, legendY);
-            legendX += g.getFontMetrics().stringWidth(label) + 42;
-            if (legendX > W - 170) {
-                legendX = x;
-                legendY += 20;
+            g.drawString(lbl, lx + 21, y);
+            lx += fm.stringWidth(lbl) + 46;
+            if (lx > W - 180) { lx = startX; y += 21; }
+        }
+    }
+
+    private static void drawGroupLabel(Graphics2D g, String text, int cx, int y, int maxW) {
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        g.setColor(DIMMED);
+        String[] parts = text.split("\n");
+        for (int i = 0; i < parts.length; i++) {
+            // Each part may need sub-wrapping
+            String[] words = parts[i].split("[-_ ]+");
+            List<String> lines = new ArrayList<>();
+            String line = "";
+            for (String w : words) {
+                if (w.isBlank()) continue;
+                String cand = line.isEmpty() ? w : line + " " + w;
+                if (g.getFontMetrics().stringWidth(cand) > maxW && !line.isEmpty()) {
+                    lines.add(line); line = w;
+                } else line = cand;
+            }
+            if (!line.isEmpty()) lines.add(line);
+            for (int j = 0; j < Math.min(3, lines.size()); j++) {
+                String l = lines.get(j);
+                g.drawString(l, cx - g.getFontMetrics().stringWidth(l)/2, y + (i * 2 + j) * 16);
             }
         }
     }
 
-    private static void drawCenteredPossiblyMultiline(Graphics2D g, String text, int centerX, int y, int maxW) {
-        g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        g.setColor(TEXT);
-        String[] words = text.split("(?=[A-Z])|[-_ ]");
-        String line = "";
-        List<String> lines = new ArrayList<>();
-        for (String word : words) {
-            if (word == null || word.isBlank()) continue;
-            String candidate = line.isEmpty() ? word : line + " " + word;
-            if (g.getFontMetrics().stringWidth(candidate) > maxW && !line.isEmpty()) {
-                lines.add(line);
-                line = word;
-            } else {
-                line = candidate;
-            }
+    // ══════════════════════════════════════════════════════════════════════
+    //  Helpers de dados
+    // ══════════════════════════════════════════════════════════════════════
+
+    private static Map<String, Map<String, Double>> buildBarData(
+            List<BenchmarkResult> r, List<String> files, List<String> methods) {
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String f : files) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            for (String m : methods) row.put(m, medianTime(r, f, m));
+            data.put(shortName(f), row);
         }
-        if (!line.isEmpty()) lines.add(line);
-        if (lines.isEmpty()) lines.add(text);
-        for (int i = 0; i < Math.min(3, lines.size()); i++) {
-            String l = lines.get(i);
-            g.drawString(l, centerX - g.getFontMetrics().stringWidth(l) / 2, y + i * 13);
-        }
+        return data;
     }
 
-    // ── Data helpers ───────────────────────────────────────────────────────
+    /** Métodos representativos — 1 por família + melhor ParallelCPU. Máx 6. */
+    private static List<String> repMethods(List<BenchmarkResult> r) {
+        List<String> rep = new ArrayList<>();
+        if (hasMethod(r, "SerialCPU"))      rep.add("SerialCPU");
 
-    private static double medianTime(List<BenchmarkResult> results, String file, String method) {
-        return median(times(results, file, method));
+        // Melhor ParallelCPU
+        String bestCpu = r.stream()
+            .filter(x -> x.method.startsWith("ParallelCPU"))
+            .map(x -> x.method).distinct()
+            .min(Comparator.comparingDouble(m ->
+                r.stream().filter(x -> x.method.equals(m)).mapToDouble(x -> x.timeMs).average().orElse(Double.MAX_VALUE)))
+            .orElse(null);
+        if (bestCpu != null) rep.add(bestCpu);
+
+        if (hasMethod(r, "ForkJoinCPU"))    rep.add("ForkJoinCPU");
+        if (hasMethod(r, "ParallelStream")) rep.add("ParallelStream");
+
+        // Melhor VirtualThreads
+        String bestVT = r.stream()
+            .filter(x -> x.method.startsWith("VirtualThreads"))
+            .map(x -> x.method).distinct()
+            .min(Comparator.comparingDouble(m ->
+                r.stream().filter(x -> x.method.equals(m)).mapToDouble(x -> x.timeMs).average().orElse(Double.MAX_VALUE)))
+            .orElse(null);
+        if (bestVT != null) rep.add(bestVT);
+
+        String gpu = r.stream().map(x -> x.method)
+            .filter(m -> m.startsWith("ParallelGPU")).findFirst().orElse(null);
+        if (gpu != null) rep.add(gpu);
+
+        return rep;
     }
 
-    private static double medianTimeByThreads(List<BenchmarkResult> results, String file, int threads) {
-        return median(results.stream()
-                .filter(r -> r.file.equals(file) && r.method.startsWith("ParallelCPU") && r.threads == threads)
-                .map(r -> r.timeMs).sorted().collect(Collectors.toList()));
+    private static double medianTime(List<BenchmarkResult> r, String file, String method) {
+        return median(times(r, file, method));
     }
 
-    private static List<Double> times(List<BenchmarkResult> results, String file, String method) {
-        return results.stream()
-                .filter(r -> r.file.equals(file) && r.method.equals(method))
-                .map(r -> r.timeMs).sorted().collect(Collectors.toList());
+    private static double medianTimeByThreads(List<BenchmarkResult> r, String file, int threads) {
+        return median(r.stream()
+            .filter(x -> x.file.equals(file) && x.method.startsWith("ParallelCPU") && x.threads == threads)
+            .map(x -> x.timeMs).collect(Collectors.toList()));
     }
 
-    private static double median(List<Double> values) {
-        if (values == null || values.isEmpty()) return 0.0;
-        List<Double> sorted = new ArrayList<>(values);
-        Collections.sort(sorted);
-        int n = sorted.size();
-        return n % 2 == 1 ? sorted.get(n / 2) : (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
+    private static List<Double> times(List<BenchmarkResult> r, String file, String method) {
+        return r.stream().filter(x -> x.file.equals(file) && x.method.equals(method))
+            .map(x -> x.timeMs).sorted().collect(Collectors.toList());
     }
 
-    private static double average(List<Double> values) {
-        if (values == null || values.isEmpty()) return 0.0;
-        return values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    private static double median(List<Double> v) {
+        if (v == null || v.isEmpty()) return 0;
+        List<Double> s = new ArrayList<>(v); Collections.sort(s);
+        int n = s.size();
+        return n % 2 == 1 ? s.get(n/2) : (s.get(n/2-1) + s.get(n/2)) / 2.0;
     }
 
-    private static double stddev(List<Double> values) {
-        if (values == null || values.size() < 2) return 0.0;
-        double avg = average(values);
-        double var = values.stream().mapToDouble(v -> (v - avg) * (v - avg)).sum() / (values.size() - 1);
-        return Math.sqrt(var);
+    private static double avg(List<Double> v) {
+        return v == null || v.isEmpty() ? 0 : v.stream().mapToDouble(d->d).average().orElse(0);
     }
 
-    private static long totalWords(List<BenchmarkResult> results, String file) {
-        return results.stream().filter(r -> r.file.equals(file)).mapToLong(r -> r.totalWords).findFirst().orElse(1);
+    private static double stddev(List<Double> v) {
+        if (v == null || v.size() < 2) return 0;
+        double a = avg(v);
+        return Math.sqrt(v.stream().mapToDouble(x -> (x-a)*(x-a)).sum() / (v.size()-1));
     }
 
-    private static double bestParallelCpuMedian(List<BenchmarkResult> results, String file) {
-        return results.stream()
-                .filter(r -> r.file.equals(file) && r.method.startsWith("ParallelCPU"))
-                .map(r -> r.method).distinct()
-                .mapToDouble(m -> medianTime(results, file, m))
-                .filter(v -> v > 0)
-                .min().orElse(0.0);
+    private static long totalWords(List<BenchmarkResult> r, String file) {
+        return r.stream().filter(x -> x.file.equals(file)).mapToLong(x -> x.totalWords).findFirst().orElse(1);
     }
 
-    private static List<String> orderedFiles(List<BenchmarkResult> results) {
-        List<String> order = List.of("donquixote", "dracula", "mobydick", "moby");
-        return results.stream().map(r -> r.file).distinct()
-                .sorted(Comparator.comparingInt(f -> {
-                    String normalized = f.toLowerCase().replaceAll("[^a-z]", "");
-                    for (int i = 0; i < order.size(); i++) if (normalized.contains(order.get(i))) return i;
-                    return 99;
-                }))
-                .collect(Collectors.toList());
+    private static double bestParallelMedian(List<BenchmarkResult> r, String file) {
+        return r.stream()
+            .filter(x -> x.file.equals(file) && (x.family.equals("PARALLEL_CPU") || x.family.equals("PARALLEL_STREAM")))
+            .map(x -> x.method).distinct()
+            .mapToDouble(m -> medianTime(r, file, m))
+            .filter(v -> v > 0).min().orElse(0);
     }
 
-    private static List<String> orderedMethods(List<BenchmarkResult> results) {
-        return results.stream().map(r -> r.method).distinct()
-                .sorted(Comparator.comparingInt(ChartGenerator::methodOrder))
-                .collect(Collectors.toList());
+    private static boolean hasMethod(List<BenchmarkResult> r, String m) {
+        return r.stream().anyMatch(x -> x.method.equals(m));
     }
 
-    private static List<String> orderedCpuMethods(List<BenchmarkResult> results, boolean includeSerial) {
-        return results.stream().map(r -> r.method)
-                .filter(m -> (includeSerial && m.equals("SerialCPU")) || m.startsWith("ParallelCPU"))
-                .distinct().sorted(Comparator.comparingInt(ChartGenerator::methodOrder))
-                .collect(Collectors.toList());
+    private static String gpuLabel(List<BenchmarkResult> r) {
+        return r.stream().map(x -> x.method).filter(m -> m.startsWith("ParallelGPU"))
+            .findFirst().orElse("ParallelGPU");
     }
 
-    private static int methodOrder(String method) {
-        if (method.equals("SerialCPU")) return 0;
-        if (method.equals("SerialStream")) return 1;
-        if (method.startsWith("ParallelCPU")) return 10 + extractThreadCount(method);
-        if (method.startsWith("ForkJoin")) return 80;
-        if (method.startsWith("ParallelStream")) return 90;
-        if (method.startsWith("VirtualThreads")) return 200 + extractChunkCount(method);
-        if (method.startsWith("ParallelGPU")) return 10_000;
-        return 20_000;
+    private static List<String> orderedFiles(List<BenchmarkResult> r) {
+        List<String> order = List.of("donquixote","dracula","mobydick","moby");
+        return r.stream().map(x -> x.file).distinct()
+            .sorted(Comparator.comparingInt(f -> {
+                String n = f.toLowerCase().replaceAll("[^a-z]","");
+                for (int i = 0; i < order.size(); i++) if (n.contains(order.get(i))) return i;
+                return 99;
+            })).collect(Collectors.toList());
     }
 
-    private static int extractChunkCount(String method) {
-        try {
-            int dash = method.indexOf('-');
-            int c = method.indexOf("chunks", dash);
-            if (dash >= 0 && c > dash) return Integer.parseInt(method.substring(dash + 1, c));
-        } catch (Exception ignored) {}
+    private static List<PointXY> sorted(List<PointXY> pts) {
+        return pts.stream().sorted(Comparator.comparingDouble(p -> p.x)).collect(Collectors.toList());
+    }
+
+    private static int methodOrder(String m) {
+        if (m.equals("SerialCPU"))           return 0;
+        if (m.equals("SerialStream"))        return 1;
+        if (m.startsWith("ParallelCPU"))     return 10 + extractInt(m,'-','t');
+        if (m.equals("ForkJoinCPU"))         return 80;
+        if (m.startsWith("ParallelStream"))  return 90;
+        if (m.startsWith("VirtualThreads"))  return 200 + extractInt(m,'-','c');
+        if (m.startsWith("ParallelGPU"))     return 10000;
+        return 20000;
+    }
+
+    private static int extractInt(String s, char a, char b) {
+        try { int i = s.indexOf(a), j = s.indexOf(b,i); if(i>=0&&j>i) return Integer.parseInt(s.substring(i+1,j)); }
+        catch (Exception ignored) {}
         return 999;
     }
 
-    private static List<String> orderedFamilies(List<BenchmarkResult> results) {
-        return results.stream().map(r -> r.family).distinct()
-                .sorted(Comparator.comparingInt(ChartGenerator::familyOrder))
-                .collect(Collectors.toList());
+    private static Color colorForMethod(String m) {
+        if (m == null)                       return DIMMED;
+        if (m.equals("SerialCPU"))           return C_SERIAL;
+        if (m.equals("SerialStream"))        return C_SSTREAM;
+        if (m.contains("CPU-2"))             return C_CPU2;
+        if (m.contains("CPU-4"))             return C_CPU4;
+        if (m.contains("CPU-8"))             return C_CPU8;
+        if (m.startsWith("ParallelCPU"))     return C_CPUN;
+        if (m.equals("ForkJoinCPU"))         return C_FORK;
+        if (m.startsWith("ParallelStream"))  return C_PSTREAM;
+        if (m.startsWith("VirtualThreads"))  return C_VT;
+        if (m.startsWith("ParallelGPU"))     return C_GPU;
+        return DIMMED;
     }
 
-    private static int familyOrder(String family) {
-        return switch (family) {
-            case "SERIAL" -> 0;
-            case "PARALLEL_CPU" -> 10;
-            case "PARALLEL_STREAM" -> 20;
-            case "VIRTUAL_THREADS" -> 30;
-            case "GPU_OPENCL" -> 40;
-            default -> 999;
+    private static List<Color> methodPalette(List<String> methods) {
+        return methods.stream().map(ChartGenerator::colorForMethod).collect(Collectors.toList());
+    }
+
+    private static String shortName(String f) {
+        String n = f.replace(".txt","").toLowerCase();
+        if (n.contains("donquixote")) return "Don Quixote";
+        if (n.contains("dracula"))    return "Dracula";
+        if (n.contains("mobydick"))   return "Moby Dick";
+        return f.replace("_"," ").replace(".txt","");
+    }
+
+    private static String shortMethodLabel(String m) {
+        if (m == null) return "-";
+        return switch (m) {
+            case "SerialCPU"       -> "Serial CPU";
+            case "SerialStream"    -> "Serial Stream";
+            case "ForkJoinCPU"     -> "ForkJoin";
+            case "ParallelStream"  -> "Parallel Stream";
+            case "ParallelGPU"     -> "GPU/OpenCL";
+            case "ParallelGPU-FallbackCPU" -> "GPU (fallback)";
+            case "Melhor CPU paralela"     -> "Melhor CPU par.";
+            case "Run 1"           -> "Run 1";
+            case "Run 2"           -> "Run 2";
+            case "Run 3"           -> "Run 3";
+            default -> m.replace("ParallelCPU-","CPU ").replace("VirtualThreads-","VT ")
+                        .replace("chunks"," ch").replace("t"," t");
         };
     }
 
-    private static String familyLabel(String family) {
-        return switch (family) {
-            case "SERIAL" -> "Serial";
-            case "PARALLEL_CPU" -> "CPU paralela";
-            case "PARALLEL_STREAM" -> "ParallelStream";
-            case "VIRTUAL_THREADS" -> "Virtual Threads";
-            case "GPU_OPENCL" -> "GPU/OpenCL";
-            default -> family;
-        };
+    private static String compact(double v) {
+        double a = Math.abs(v);
+        if (a >= 1_000_000) return String.format("%.1fM", v/1e6);
+        if (a >= 10_000)    return String.format("%.0fK", v/1e3);
+        if (a >= 1_000)     return String.format("%.1fK", v/1e3);
+        if (a >= 100)       return String.format("%.0f", v);
+        if (a >= 10)        return String.format("%.1f", v);
+        return String.format("%.2f", v);
     }
 
-    private static double bestMedianByFamily(List<BenchmarkResult> results, String file, String family) {
-        return results.stream()
-                .filter(r -> r.file.equals(file) && r.family.equals(family))
-                .map(r -> r.method).distinct()
-                .mapToDouble(m -> medianTime(results, file, m))
-                .filter(v -> v > 0)
-                .min().orElse(0.0);
-    }
-
-    private static double bestCpuStrategyMedian(List<BenchmarkResult> results, String file) {
-        return results.stream()
-                .filter(r -> r.file.equals(file) && (r.family.equals("PARALLEL_CPU") || r.family.equals("PARALLEL_STREAM")))
-                .map(r -> r.method).distinct()
-                .mapToDouble(m -> medianTime(results, file, m))
-                .filter(v -> v > 0)
-                .min().orElse(0.0);
-    }
-
-    private static int extractThreadCount(String method) {
-        try {
-            int dash = method.indexOf('-');
-            int t = method.indexOf('t', dash);
-            if (dash >= 0 && t > dash) return Integer.parseInt(method.substring(dash + 1, t));
-        } catch (Exception ignored) {}
-        return 999;
-    }
-
-    private static String gpuLabel(List<BenchmarkResult> results) {
-        return results.stream().map(r -> r.method).filter(m -> m.startsWith("ParallelGPU"))
-                .findFirst().orElse("ParallelGPU");
-    }
-
-    private static String shortName(String fileName) {
-        String n = fileName.replace(".txt", "");
-        if (n.toLowerCase().contains("donquixote")) return "Don Quixote";
-        if (n.toLowerCase().contains("dracula")) return "Dracula";
-        if (n.toLowerCase().contains("mobydick")) return "Moby Dick";
-        return n.replace("_", " ");
-    }
-
-    private static String compact(double value) {
-        double abs = Math.abs(value);
-        if (abs >= 1_000_000) return String.format(Locale.US, "%.1fM", value / 1_000_000.0);
-        if (abs >= 10_000) return String.format(Locale.US, "%.0fK", value / 1_000.0);
-        if (abs >= 1_000) return String.format(Locale.US, "%.1fK", value / 1_000.0);
-        if (abs >= 100) return String.format(Locale.US, "%.0f", value);
-        if (abs >= 10) return String.format(Locale.US, "%.1f", value);
-        return String.format(Locale.US, "%.2f", value);
-    }
-
-    private static String findGroup(Map<String, Map<String, Double>> data, Map.Entry<String, Double> entry) {
-        // This method is only a defensive helper for max-value calculation and is not used for drawing.
-        for (Map.Entry<String, Map<String, Double>> e : data.entrySet()) {
-            if (e.getValue().containsKey(entry.getKey()) && Objects.equals(e.getValue().get(entry.getKey()), entry.getValue())) {
-                return e.getKey();
-            }
-        }
-        return "";
-    }
-
-    private static void saveChart(BufferedImage img, String path) throws IOException {
+    private static void save(BufferedImage img, String path) throws IOException {
         File f = new File(path);
-        File parent = f.getParentFile();
-        if (parent != null) parent.mkdirs();
+        if (f.getParentFile() != null) f.getParentFile().mkdirs();
         ImageIO.write(img, "PNG", f);
-        System.out.printf("  Chart -> %s%n", f.getAbsolutePath());
+        System.out.printf("  Saved -> %s%n", f.getName());
     }
 
-    private record PointValue(double x, double y, String label) {}
-    private record RankingRow(String world, String method, double time) {}
+    private record PointXY(double x, double y, String label) {}
 }
