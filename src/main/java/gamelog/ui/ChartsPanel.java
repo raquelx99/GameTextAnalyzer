@@ -11,7 +11,7 @@ import java.io.*;
 import java.util.List;
 
 /**
- * Panel that shows the four generated chart PNGs in a tabbed view.
+ * Panel that shows the generated chart PNGs in a tabbed view.
  * Also allows regenerating charts from the existing CSV.
  */
 public class ChartsPanel extends JPanel {
@@ -72,10 +72,19 @@ public class ChartsPanel extends JPanel {
         tabs.removeAll();
 
         String[][] charts = {
-            { "⏱  Tempo Médio",      MainWindow.CHARTS_DIR + "/chart_median_time.png"    },
-            { "🧵  Threads",          MainWindow.CHARTS_DIR + "/chart_thread_impact.png"  },
-            { "🚀  Speedup",          MainWindow.CHARTS_DIR + "/chart_speedup.png"        },
-            { "📈  Throughput",       MainWindow.CHARTS_DIR + "/chart_throughput.png"     },
+            { "⏱  Tempo Mediano",        MainWindow.CHARTS_DIR + "/chart_median_time.png"          },
+            { "🧵  Threads",              MainWindow.CHARTS_DIR + "/chart_thread_impact.png"        },
+            { "🚀  Speedup",              MainWindow.CHARTS_DIR + "/chart_speedup.png"              },
+            { "📈  Throughput",           MainWindow.CHARTS_DIR + "/chart_throughput.png"           },
+            { "🔁  3 Execuções",          MainWindow.CHARTS_DIR + "/chart_run_variation.png"        },
+            { "📊  Média + Desvio",       MainWindow.CHARTS_DIR + "/chart_mean_stddev.png"          },
+            { "📚  Tamanho do Texto",     MainWindow.CHARTS_DIR + "/chart_size_impact.png"          },
+            { "⚖️  Normalizado",          MainWindow.CHARTS_DIR + "/chart_normalized_100k.png"      },
+            { "🧮  Speedup Threads",      MainWindow.CHARTS_DIR + "/chart_cpu_speedup_threads.png"   },
+            { "✅  Eficiência",           MainWindow.CHARTS_DIR + "/chart_parallel_efficiency.png"  },
+            { "⚔️  CPU vs GPU",           MainWindow.CHARTS_DIR + "/chart_cpu_vs_gpu.png"            },
+            { "🏆  Ranking",              MainWindow.CHARTS_DIR + "/chart_ranking_world.png"        },
+            { "🔎  Densidade",            MainWindow.CHARTS_DIR + "/chart_word_density.png"         },
         };
 
         int loaded = 0;
@@ -93,7 +102,7 @@ public class ChartsPanel extends JPanel {
             statusLabel.setText("Nenhum gráfico encontrado — execute o benchmark primeiro.");
             statusLabel.setForeground(new Color(0xFFAA44));
         } else {
-            statusLabel.setText(loaded + " de 4 gráficos carregados.");
+            statusLabel.setText(loaded + " de " + charts.length + " gráficos carregados.");
             statusLabel.setForeground(MainWindow.ACCENT3);
         }
     }

@@ -142,12 +142,23 @@ file,world,total_words,word_searched,method,threads,run,occurrences,time_ms,spee
 
 ### Gráficos gerados
 
-| Gráfico | Arquivo |
-|---|---|
-| Tempo médio por método | `charts/chart_median_time.png` |
-| Impacto do número de threads | `charts/chart_thread_impact.png` |
-| Speedup em relação ao SerialCPU | `charts/chart_speedup.png` |
-| Throughput em palavras por milissegundo | `charts/chart_throughput.png` |
+A aplicação gera um conjunto ampliado de gráficos para cobrir diretamente os pontos pedidos no enunciado: comparação serial/paralela, variação das amostras, análise estatística, impacto do número de threads e interpretação gamificada dos textos.
+
+| Gráfico | Arquivo | Para que serve |
+|---|---|---|
+| Tempo mediano por método | `charts/chart_median_time.png` | Compara SerialCPU, ParallelCPU e GPU por amostra. |
+| Impacto do número de threads | `charts/chart_thread_impact.png` | Mostra como 2, 4, 8 e núcleos disponíveis afetam o ParallelCPU. |
+| Speedup em relação ao SerialCPU | `charts/chart_speedup.png` | Mede o ganho ou perda de cada método em relação ao serial. |
+| Throughput | `charts/chart_throughput.png` | Mostra quantas palavras cada método processa por milissegundo. |
+| Variação entre as 3 execuções | `charts/chart_run_variation.png` | Evidencia as três amostras executadas por método. |
+| Tempo médio com desvio padrão | `charts/chart_mean_stddev.png` | Reforça a análise estatística e a estabilidade dos tempos. |
+| Impacto do tamanho do texto | `charts/chart_size_impact.png` | Relaciona total de palavras com tempo de execução. |
+| Tempo normalizado por 100 mil palavras | `charts/chart_normalized_100k.png` | Permite comparar textos de tamanhos diferentes de forma mais justa. |
+| Speedup da CPU paralela por threads | `charts/chart_cpu_speedup_threads.png` | Analisa especificamente o ganho do ParallelCPU conforme o número de threads. |
+| Eficiência paralela | `charts/chart_parallel_efficiency.png` | Mostra o aproveitamento das threads, usando `speedup / threads`. |
+| SerialCPU vs melhor ParallelCPU vs GPU | `charts/chart_cpu_vs_gpu.png` | Resume os principais competidores em cada amostra. |
+| Ranking por mundo narrativo | `charts/chart_ranking_world.png` | Apresenta, de forma gamificada, o método vencedor em cada obra. |
+| Densidade da palavra-tema | `charts/chart_word_density.png` | Mostra a frequência da palavra buscada a cada 10 mil palavras, conectando desempenho e análise narrativa. |
 
 ### Discussões esperadas
 
