@@ -1,20 +1,20 @@
 package gamelog.counters;
 
+import org.jocl.*;
+import static org.jocl.CL.*;
+
 /**
- * Parallel GPU counter using OpenCL (JOCL).
+ * Parallel GPU counter using OpenCL via JOCL 2.0.4.
  *
- * If JOCL is not available on the classpath or no OpenCL device is found,
- * the counter automatically falls back to a parallel CPU implementation
- * and records a warning — so the benchmark still runs end-to-end.
- *
- * To enable GPU support, add jocl-2.0.4.jar (and native libs) to the classpath.
+ * Falls back to a parallel CPU stream if JOCL's native library cannot be
+ * loaded or if no OpenCL platform/device is available on the machine.
  */
 public class ParallelGPUCounter implements WordCounter {
 
     private static final boolean JOCL_AVAILABLE = checkJocl();
     private boolean fallbackMode = !JOCL_AVAILABLE;
 
-    /** OpenCL kernel: each work-item checks one line. */
+    /** OpenCL kernel: each work-item checks one line against the target word. */
     private static final String KERNEL_SOURCE =
         "__kernel void countEvent(\n" +
         "    __global const char* text,\n" +
@@ -51,15 +51,13 @@ public class ParallelGPUCounter implements WordCounter {
         }
     }
 
-    /**
-     * True GPU path. Encodes lines into a flat byte buffer, transfers to GPU,
-     * runs the kernel, reads back per-line results, and sums them on the CPU.
-     */
-    private long gpuCount(String[] lines, String word) throws Exception {
-        // ── Build flat buffer ───────────────────────────────────────────────
-        byte[] wordBytes = word.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        int totalLines   = lines.length;
+    private long gpuCount(String[] lines, String word) {
+        if (lines.length == 0) return 0;
 
+        byte[] wordBytes  = word.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        int    totalLines = lines.length;
+
+        // ── Build flat byte buffer of all lines ─────────────────────────────
         int[] offsets = new int[totalLines];
         int[] lengths = new int[totalLines];
         int   total   = 0;
@@ -69,151 +67,119 @@ public class ParallelGPUCounter implements WordCounter {
             lengths[i] = b.length;
             total += b.length;
         }
-
-        byte[] textBuf = new byte[total];
+        byte[] textBuf = new byte[Math.max(total, 1)];
         int pos = 0;
         for (String line : lines) {
             byte[] b = line.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             System.arraycopy(b, 0, textBuf, pos, b.length);
             pos += b.length;
         }
+        byte[] wordBuf = wordBytes.length > 0 ? wordBytes : new byte[1];
 
-        // ── JOCL calls (via reflection to avoid hard compile dependency) ────
-        Class<?> cl   = Class.forName("org.jocl.CL");
-        Class<?> clm  = Class.forName("org.jocl.cl_mem");
+        // ── Platform / device discovery ──────────────────────────────────────
+        setExceptionsEnabled(false);
 
-        // setExceptionsEnabled(true)
-        cl.getMethod("setExceptionsEnabled", boolean.class).invoke(null, true);
-
-        // Obtain platform/device/context/queue
-        Object[] platforms = (Object[]) cl.getMethod("getPlatforms").invoke(null);
-        if (platforms == null || platforms.length == 0)
+        int[] numPlatforms = new int[1];
+        if (clGetPlatformIDs(0, null, numPlatforms) != CL_SUCCESS || numPlatforms[0] == 0)
             throw new RuntimeException("No OpenCL platform found");
+        cl_platform_id[] platforms = new cl_platform_id[numPlatforms[0]];
+        clGetPlatformIDs(platforms.length, platforms, null);
 
-        long deviceType = 4L; // CL_DEVICE_TYPE_GPU
-        Object[] devices;
-        try {
-            devices = (Object[]) cl.getMethod("getDevices", platforms[0].getClass(), long.class)
-                                    .invoke(null, platforms[0], deviceType);
-        } catch (Exception ex) {
-            deviceType = 2L; // CL_DEVICE_TYPE_CPU fallback
-            devices = (Object[]) cl.getMethod("getDevices", platforms[0].getClass(), long.class)
-                                    .invoke(null, platforms[0], deviceType);
+        // Prefer GPU; fall back to CPU device if not available
+        int[]  numDevices = new int[1];
+        long   deviceType = CL_DEVICE_TYPE_GPU;
+        if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 0, null, numDevices) != CL_SUCCESS
+                || numDevices[0] == 0) {
+            if (clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_CPU, 0, null, numDevices) != CL_SUCCESS
+                    || numDevices[0] == 0)
+                throw new RuntimeException("No OpenCL device found");
+            deviceType = CL_DEVICE_TYPE_CPU;
         }
-        if (devices == null || devices.length == 0)
-            throw new RuntimeException("No OpenCL device found");
+        cl_device_id[] devices = new cl_device_id[numDevices[0]];
+        clGetDeviceIDs(platforms[0], deviceType, devices.length, devices, null);
 
-        Object context = cl.getMethod("createContext", null, int.class,
-                                       devices.getClass(), Object.class, Object.class, int[].class)
-                           .invoke(null, null, 1, devices, null, null, null);
-        Object queue   = cl.getMethod("createCommandQueue",
-                                       context.getClass(), devices[0].getClass(), long.class)
-                           .invoke(null, context, devices[0], 0L);
+        setExceptionsEnabled(true);
 
-        // Allocate buffers
-        long MEM_READ_ONLY  = 4L;
-        long MEM_WRITE_ONLY = 2L;
+        // ── Context / queue ──────────────────────────────────────────────────
+        int[]           err     = new int[1];
+        cl_context      context = clCreateContext(null, 1, devices, null, null, err);
+        cl_command_queue queue  = clCreateCommandQueueWithProperties(context, devices[0], null, err);
 
-        java.nio.ByteBuffer textNIO    = java.nio.ByteBuffer.allocateDirect(textBuf.length);
-        textNIO.put(textBuf); textNIO.rewind();
-        java.nio.ByteBuffer wordNIO    = java.nio.ByteBuffer.allocateDirect(wordBytes.length);
-        wordNIO.put(wordBytes); wordNIO.rewind();
-        java.nio.IntBuffer  offsetNIO  = java.nio.IntBuffer.allocate(totalLines);
-        offsetNIO.put(offsets); offsetNIO.rewind();
-        java.nio.IntBuffer  lengthNIO  = java.nio.IntBuffer.allocate(totalLines);
-        lengthNIO.put(lengths); lengthNIO.rewind();
+        // ── Device buffers ───────────────────────────────────────────────────
+        cl_mem bufText   = clCreateBuffer(context,
+                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                textBuf.length, Pointer.to(textBuf), null);
+        cl_mem bufWord   = clCreateBuffer(context,
+                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                wordBuf.length, Pointer.to(wordBuf), null);
+        cl_mem bufOff    = clCreateBuffer(context,
+                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                (long) totalLines * Integer.BYTES, Pointer.to(offsets), null);
+        cl_mem bufLen    = clCreateBuffer(context,
+                CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                (long) totalLines * Integer.BYTES, Pointer.to(lengths), null);
+        cl_mem bufResult = clCreateBuffer(context,
+                CL_MEM_WRITE_ONLY,
+                (long) totalLines * Integer.BYTES, null, null);
 
-        Object bufText   = cl.getMethod("createBuffer", context.getClass(), long.class, long.class,
-                                         java.nio.Buffer.class, int[].class)
-                             .invoke(null, context, MEM_READ_ONLY, (long) textBuf.length, textNIO, null);
-        Object bufWord   = cl.getMethod("createBuffer", context.getClass(), long.class, long.class,
-                                         java.nio.Buffer.class, int[].class)
-                             .invoke(null, context, MEM_READ_ONLY, (long) wordBytes.length, wordNIO, null);
-        Object bufOff    = cl.getMethod("createBuffer", context.getClass(), long.class, long.class,
-                                         java.nio.Buffer.class, int[].class)
-                             .invoke(null, context, MEM_READ_ONLY, (long) totalLines * 4, offsetNIO, null);
-        Object bufLen    = cl.getMethod("createBuffer", context.getClass(), long.class, long.class,
-                                         java.nio.Buffer.class, int[].class)
-                             .invoke(null, context, MEM_READ_ONLY, (long) totalLines * 4, lengthNIO, null);
-        Object bufResult = cl.getMethod("createBuffer", context.getClass(), long.class, long.class,
-                                         java.nio.Buffer.class, int[].class)
-                             .invoke(null, context, MEM_WRITE_ONLY, (long) totalLines * 4, null, null);
+        // ── Build program / kernel ───────────────────────────────────────────
+        cl_program program = clCreateProgramWithSource(
+                context, 1, new String[]{KERNEL_SOURCE}, null, null);
+        clBuildProgram(program, 0, null, null, null, null);
+        cl_kernel kernel = clCreateKernel(program, "countEvent", null);
 
-        // Build program/kernel
-        Object program = cl.getMethod("createProgramWithSource", context.getClass(), int.class,
-                                       String[].class, long[].class, int[].class)
-                           .invoke(null, context, 1, new String[]{KERNEL_SOURCE}, null, null);
-        cl.getMethod("buildProgram", program.getClass(), int.class, devices.getClass(),
-                      String.class, Object.class, Object.class)
-          .invoke(null, program, 1, devices, null, null, null);
-        Object kernel = cl.getMethod("createKernel", program.getClass(), String.class, int[].class)
-                          .invoke(null, program, "countEvent", null);
+        // ── Set kernel arguments ─────────────────────────────────────────────
+        clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(bufText));
+        clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(bufOff));
+        clSetKernelArg(kernel, 2, Sizeof.cl_mem, Pointer.to(bufLen));
+        clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(bufWord));
+        clSetKernelArg(kernel, 4, Sizeof.cl_int, Pointer.to(new int[]{wordBytes.length}));
+        clSetKernelArg(kernel, 5, Sizeof.cl_int, Pointer.to(new int[]{totalLines}));
+        clSetKernelArg(kernel, 6, Sizeof.cl_mem, Pointer.to(bufResult));
 
-        // Set kernel args
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, clm)
-          .invoke(null, kernel, 0, (long) clm.getField("SIZE").getLong(null), bufText);
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, clm)
-          .invoke(null, kernel, 1, (long) clm.getField("SIZE").getLong(null), bufOff);
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, clm)
-          .invoke(null, kernel, 2, (long) clm.getField("SIZE").getLong(null), bufLen);
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, clm)
-          .invoke(null, kernel, 3, (long) clm.getField("SIZE").getLong(null), bufWord);
+        // ── Execute kernel ───────────────────────────────────────────────────
+        clEnqueueNDRangeKernel(queue, kernel, 1,
+                null, new long[]{totalLines}, null, 0, null, null);
 
-        java.nio.IntBuffer wlenBuf = java.nio.IntBuffer.allocate(1);
-        wlenBuf.put(wordBytes.length); wlenBuf.rewind();
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, java.nio.Buffer.class)
-          .invoke(null, kernel, 4, 4L, wlenBuf);
+        // ── Read results back ────────────────────────────────────────────────
+        int[] resultArr = new int[totalLines];
+        clEnqueueReadBuffer(queue, bufResult, true, 0,
+                (long) totalLines * Integer.BYTES, Pointer.to(resultArr), 0, null, null);
 
-        java.nio.IntBuffer tlinesBuf = java.nio.IntBuffer.allocate(1);
-        tlinesBuf.put(totalLines); tlinesBuf.rewind();
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, java.nio.Buffer.class)
-          .invoke(null, kernel, 5, 4L, tlinesBuf);
-
-        cl.getMethod("setKernelArg", kernel.getClass(), int.class, long.class, clm)
-          .invoke(null, kernel, 6, (long) clm.getField("SIZE").getLong(null), bufResult);
-
-        // Enqueue kernel
-        cl.getMethod("enqueueNDRangeKernel", queue.getClass(), kernel.getClass(), int.class,
-                      long[].class, long[].class, long[].class, int.class, Object[].class, Object.class)
-          .invoke(null, queue, kernel, 1, null, new long[]{totalLines}, null, 0, null, null);
-
-        // Read results
-        java.nio.IntBuffer resultBuf = java.nio.IntBuffer.allocate(totalLines);
-        cl.getMethod("enqueueReadBuffer", queue.getClass(), clm, boolean.class,
-                      long.class, long.class, java.nio.Buffer.class, int.class, Object[].class, Object.class)
-          .invoke(null, queue, bufResult, true, 0L, (long) totalLines * 4, resultBuf, 0, null, null);
-
-        // Sum results
         long count = 0;
-        resultBuf.rewind();
-        while (resultBuf.hasRemaining()) count += resultBuf.get();
+        for (int r : resultArr) count += r;
 
-        // Release resources
-        for (Object buf : new Object[]{bufText, bufWord, bufOff, bufLen, bufResult}) {
-            cl.getMethod("releaseMemObject", clm).invoke(null, buf);
-        }
-        cl.getMethod("releaseKernel",       kernel.getClass() ).invoke(null, kernel);
-        cl.getMethod("releaseProgram",      program.getClass()).invoke(null, program);
-        cl.getMethod("releaseCommandQueue", queue.getClass()  ).invoke(null, queue);
-        cl.getMethod("releaseContext",      context.getClass()).invoke(null, context);
+        // ── Release OpenCL resources ─────────────────────────────────────────
+        clReleaseMemObject(bufText);
+        clReleaseMemObject(bufWord);
+        clReleaseMemObject(bufOff);
+        clReleaseMemObject(bufLen);
+        clReleaseMemObject(bufResult);
+        clReleaseKernel(kernel);
+        clReleaseProgram(program);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
 
         return count;
     }
 
-    /** Fallback when JOCL/OpenCL is unavailable: CPU parallel stream. */
+    /** CPU parallel stream fallback. */
     private long fallbackCount(String[] lines, String word) {
-        return java.util.Arrays.stream(lines)
-                .parallel()
-                .filter(word::equals)
-                .count();
+        return java.util.Arrays.stream(lines).parallel().filter(word::equals).count();
     }
 
+    /**
+     * Attempts to trigger the JOCL native library load.
+     * Returns false (and prints a message) if the native lib is missing or
+     * if no OpenCL runtime is present on the machine.
+     */
     private static boolean checkJocl() {
         try {
-            Class.forName("org.jocl.CL");
+            setExceptionsEnabled(false);
             return true;
-        } catch (ClassNotFoundException e) {
-            System.out.println("[ParallelGPU] JOCL not found — GPU mode will use CPU fallback.");
+        } catch (Throwable e) {
+            System.out.println("[ParallelGPU] JOCL native library not available — "
+                    + "GPU mode will use CPU fallback: " + e.getMessage());
             return false;
         }
     }

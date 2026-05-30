@@ -24,7 +24,7 @@ public class BenchmarkPanel extends JPanel {
     // ── Controls ─────────────────────────────────────────────────────────────
     private JComboBox<String> fileCombo;
     private JTextField        eventField;
-    private JCheckBox         chkSerial, chkCpu2, chkCpu4, chkCpu8, chkGpu;
+    private JCheckBox         chkSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN, chkGpu;
     private JCheckBox         chkFullBench;
     private JButton           btnRun;
     private JProgressBar      progress;
@@ -124,8 +124,9 @@ public class BenchmarkPanel extends JPanel {
         chkCpu2   = styledCheck("ParallelCPU  2 threads", true);
         chkCpu4   = styledCheck("ParallelCPU  4 threads", true);
         chkCpu8   = styledCheck("ParallelCPU  8 threads", true);
+        chkCpuN   = styledCheck("ParallelCPU  " + BenchmarkRunner.CPU_CORES + " threads  (esta máquina)", true);
         chkGpu    = styledCheck("ParallelGPU  (OpenCL)",  true);
-        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkGpu}) {
+        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkCpuN,chkGpu}) {
             cb.setEnabled(false);
             p.add(cb);
             p.add(Box.createVerticalStrut(2));
@@ -299,7 +300,7 @@ public class BenchmarkPanel extends JPanel {
         boolean full = chkFullBench.isSelected();
         fileCombo.setEnabled(!full);
         eventField.setEnabled(!full);
-        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkGpu}) {
+        for (JCheckBox cb : new JCheckBox[]{chkSerial,chkCpu2,chkCpu4,chkCpu8,chkCpuN,chkGpu}) {
             cb.setEnabled(!full);
         }
     }

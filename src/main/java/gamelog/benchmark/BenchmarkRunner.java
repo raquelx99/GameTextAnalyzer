@@ -20,12 +20,16 @@ public class BenchmarkRunner {
     /** Number of timed runs per method (warmup run is separate and discarded). */
     public static final int RUNS = 3;
 
+    /** Threads available on the current machine, used for the dynamic counter. */
+    public static final int CPU_CORES = Runtime.getRuntime().availableProcessors();
+
     /** Counters used in the benchmark (in display order). */
     private static final List<WordCounter> COUNTERS = List.of(
             new SerialCPUCounter(),
             new ParallelCPUCounter(2),
             new ParallelCPUCounter(4),
             new ParallelCPUCounter(8),
+            new ParallelCPUCounter(CPU_CORES),
             new ParallelGPUCounter()
     );
 
@@ -139,7 +143,7 @@ public class BenchmarkRunner {
         List<Map.Entry<String, Double>> sorted = new ArrayList<>(medians.entrySet());
         sorted.sort(Map.Entry.comparingByValue());
 
-        String[] medals = {"1)", "2)", "3)", "4)", "5)"};
+        String[] medals = {"1)", "2)", "3)", "4)", "5)", "6)"};
         System.out.printf("%n  -- Ranking: %s / palavra '%s' --%n", fileName, event);
         for (int i = 0; i < sorted.size(); i++) {
             System.out.printf(java.util.Locale.US, "  %s %-24s  %9.4f ms%n",

@@ -1,46 +1,55 @@
 file,world,total_words,word_searched,method,threads,run,occurrences,time_ms,speedup,efficiency,words_per_ms
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,1,2245,5.1871,0.9107,0.9107,74566.31
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,2,2245,4.7241,1.0000,1.0000,81873.83
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,3,2245,3.4569,1.3666,1.3666,111888.60
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,1,2245,4.8217,0.9798,0.4899,80216.62
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,2,2245,3.5444,1.3328,0.6664,109125.47
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,3,2245,3.3806,1.3974,0.6987,114411.34
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,1,2245,3.6729,1.2862,0.3216,105306.89
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,2,2245,3.3447,1.4124,0.3531,115642.18
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,3,2245,3.1932,1.4794,0.3699,121127.59
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,1,2245,18.4304,0.2563,0.0320,20986.15
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,2,2245,6.2982,0.7501,0.0938,61412.06
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,3,2245,4.5001,1.0498,0.1312,85949.96
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU-FallbackCPU,1,1,2245,2.9226,1.6164,1.6164,132343.48
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU-FallbackCPU,1,2,2245,2.4753,1.9085,1.9085,156259.44
-DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU-FallbackCPU,1,3,2245,2.2363,2.1124,2.1124,172953.56
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,1,113,1.8116,0.7857,0.7857,92233.30
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,2,113,1.4234,1.0000,1.0000,117388.03
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,3,113,0.9199,1.5474,1.5474,181648.79
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,1,113,2.4298,0.5858,0.2929,68769.90
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,2,113,1.8482,0.7702,0.3851,90406.94
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,3,113,1.9564,0.7276,0.3638,85409.26
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,1,113,3.0984,0.4594,0.1149,53929.93
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,2,113,2.9919,0.4758,0.1189,55847.95
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,3,113,2.7286,0.5217,0.1304,61237.73
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,1,113,4.9986,0.2848,0.0356,33428.29
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,2,113,5.0607,0.2813,0.0352,33017.89
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,3,113,4.8703,0.2923,0.0365,34308.91
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU-FallbackCPU,1,1,113,3.2395,0.4394,0.4394,51580.96
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU-FallbackCPU,1,2,113,2.2424,0.6348,0.6348,74514.34
-Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU-FallbackCPU,1,3,113,2.3851,0.5968,0.5968,70056.97
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,1,1229,2.0449,0.8686,0.8686,108865.37
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,2,1229,1.7761,1.0000,1.0000,125340.14
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,3,1229,1.4349,1.2378,1.2378,155148.75
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,1,1229,3.5012,0.5073,0.2536,63583.33
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,2,1229,2.5046,0.7092,0.3546,88885.55
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,3,1229,2.8202,0.6298,0.3149,78937.58
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,1,1229,3.2970,0.5387,0.1347,67521.66
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,2,1229,3.8278,0.4640,0.1160,58158.29
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,3,1229,2.6071,0.6813,0.1703,85388.46
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,1,1229,4.7290,0.3756,0.0469,47075.47
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,2,1229,5.7497,0.3089,0.0386,38718.39
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,3,1229,5.1986,0.3417,0.0427,42822.85
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU-FallbackCPU,1,1,1229,9.6626,0.1838,0.1838,23039.35
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU-FallbackCPU,1,2,1229,3.2002,0.5550,0.5550,69563.34
-MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU-FallbackCPU,1,3,1229,2.2757,0.7805,0.7805,97823.68
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,1,2245,1.4646,0.9573,0.9573,264088.49
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,2,2245,1.3396,1.0466,1.0466,288730.96
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,SerialCPU,1,3,2245,1.4020,1.0000,1.0000,275880.17
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,1,2245,1.7522,0.8001,0.4001,220741.92
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,2,2245,1.3488,1.0394,0.5197,286761.78
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-2t,2,3,2245,1.2816,1.0939,0.5470,301797.75
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,1,2245,1.0599,1.3228,0.3307,364924.99
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,2,2245,1.0626,1.3194,0.3299,363997.74
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-4t,4,3,2245,1.0777,1.3009,0.3252,358897.65
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,1,2245,1.6871,0.8310,0.1039,229259.68
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,2,2245,1.5425,0.9089,0.1136,250751.38
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-8t,8,3,2245,1.1015,1.2728,0.1591,351142.99
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-20t,20,1,2245,1.8801,0.7457,0.0373,205725.23
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-20t,20,2,2245,3.6335,0.3859,0.0193,106449.43
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelCPU-20t,20,3,2245,8.1328,0.1724,0.0086,47558.53
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU,1,1,2245,20.5617,0.0682,0.0682,18810.90
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU,1,2,2245,19.8339,0.0707,0.0707,19501.16
+DonQuixote-388208.txt,RPG de Cavalaria e Aventura,386784,quijote,ParallelGPU,1,3,2245,21.1918,0.0662,0.0662,18251.59
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,1,113,0.7903,1.0000,1.0000,211431.10
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,2,113,0.8180,0.9661,0.9661,204271.39
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,SerialCPU,1,3,113,0.7726,1.0229,1.0229,216274.92
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,1,113,0.8467,0.9334,0.4667,197347.35
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,2,113,0.5887,1.3424,0.6712,283835.57
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-2t,2,3,113,0.5261,1.5022,0.7511,317608.82
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,1,113,0.6310,1.2525,0.3131,264808.24
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,2,113,0.7777,1.0162,0.2541,214856.90
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-4t,4,3,113,0.6727,1.1748,0.2937,248393.04
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,1,113,0.8953,0.8827,0.1103,186634.44
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,2,113,1.8191,0.4344,0.0543,91855.26
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-8t,8,3,113,0.9386,0.8420,0.1052,178024.72
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-20t,20,1,113,2.2867,0.3456,0.0173,73072.11
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-20t,20,2,113,2.3250,0.3399,0.0170,71868.42
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelCPU-20t,20,3,113,2.4683,0.3202,0.0160,67695.96
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU,1,1,113,10.0396,0.0787,0.0787,16643.49
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU,1,2,113,9.9531,0.0794,0.0794,16788.14
+Dracula-165307.txt,Survival Horror Gotico,167094,blood,ParallelGPU,1,3,113,9.9682,0.0793,0.0793,16762.71
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,1,1229,1.1641,0.9871,0.9871,191238.03
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,2,1229,1.1491,1.0000,1.0000,193734.23
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,SerialCPU,1,3,1229,0.9518,1.2073,1.2073,233893.68
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,1,1229,1.1935,0.9628,0.4814,186527.02
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,2,1229,0.8936,1.2859,0.6430,249126.85
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-2t,2,3,1229,0.9601,1.1969,0.5984,231871.68
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,1,1229,0.8642,1.3297,0.3324,257602.70
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,2,1229,0.8140,1.4117,0.3529,273488.94
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-4t,4,3,1229,0.9265,1.2403,0.3101,240280.63
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,1,1229,1.2227,0.9398,0.1175,182072.61
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,2,1229,1.0782,1.0658,0.1332,206473.75
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-8t,8,3,1229,1.2563,0.9147,0.1143,177202.76
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-20t,20,1,1229,2.0275,0.5668,0.0283,109800.25
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-20t,20,2,1229,3.1488,0.3649,0.0182,70699.95
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelCPU-20t,20,3,1229,2.3957,0.4797,0.0240,92924.82
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU,1,1,1229,15.4817,0.0742,0.0742,14379.56
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU,1,2,1229,13.8376,0.0830,0.0830,16088.05
+MobyDick-217452.txt,Aventura Naval / Boss Hunt,222620,whale,ParallelGPU,1,3,1229,14.8765,0.0772,0.0772,14964.54
