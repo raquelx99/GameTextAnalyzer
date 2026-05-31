@@ -107,8 +107,11 @@ public class ChartGenerator {
         save(chart08_TresExecucoes(results),    outputDir + "/chart_08_tres_execucoes.png");
         save(chart09_MediaDesvio(results),      outputDir + "/chart_09_media_desvio.png");
         save(chart10_GpuVsCpu(results),         outputDir + "/chart_10_gpu_vs_cpu.png");
+        save(chart11_ChunkGranularity(results), outputDir + "/chart_11_chunks.png");
+        save(chart12_ForkJoinThresholds(results), outputDir + "/chart_12_forkjoin_thresholds.png");
+        save(chart13_GpuPreparationKernel(results), outputDir + "/chart_13_gpu_prep_kernel.png");
 
-        System.out.println("\n  10 gráficos salvos em: " + new File(outputDir).getAbsolutePath());
+        System.out.println("\n  13 gráficos salvos em: " + new File(outputDir).getAbsolutePath());
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -175,7 +178,7 @@ public class ChartGenerator {
             double serialT = medianTime(r, f, "SerialCPU");
             if (serialT > 0) pts.add(new PointXY(1, serialT, "Serial\n(ref.)"));
 
-            r.stream().filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+            r.stream().filter(x -> x.file.equals(f) && isThreadOnlyParallelCPU(x.method))
                 .map(x -> x.threads).distinct().sorted()
                 .forEach(t -> pts.add(new PointXY(t,
                     medianTimeByThreads(r, f, t), t + "t")));
@@ -201,7 +204,7 @@ public class ChartGenerator {
         for (String f : orderedFiles(r)) {
             double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
             List<PointXY> pts = r.stream()
-                .filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+                .filter(x -> x.file.equals(f) && isThreadOnlyParallelCPU(x.method))
                 .map(x -> x.threads).distinct().sorted()
                 .map(t -> new PointXY(t,
                     serial / Math.max(0.0001, medianTimeByThreads(r, f, t)), t + "t"))
@@ -235,7 +238,7 @@ public class ChartGenerator {
         for (String f : orderedFiles(r)) {
             double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
             List<PointXY> pts = r.stream()
-                .filter(x -> x.file.equals(f) && x.method.startsWith("ParallelCPU"))
+                .filter(x -> x.file.equals(f) && isThreadOnlyParallelCPU(x.method))
                 .map(x -> x.threads).distinct().sorted()
                 .map(t -> {
                     double spd = serial / Math.max(0.0001, medianTimeByThreads(r, f, t));
@@ -379,9 +382,14 @@ public class ChartGenerator {
      * Gráfico de destaque para o relatório.
      */
     private static BufferedImage chart10_GpuVsCpu(List<BenchmarkResult> r) {
-        String gpuMethod = gpuLabel(r);
-        List<String> series  = List.of("SerialCPU", "Melhor CPU paralela", gpuMethod);
-        List<Color>  palette = List.of(C_SERIAL, C_CPU4, C_GPU);
+        String gpuString = gpuLabelContaining(r, "String");
+        String gpuHash = gpuLabelContaining(r, "Hash");
+        List<String> series  = new ArrayList<>();
+        series.add("SerialCPU");
+        series.add("Melhor CPU paralela");
+        if (gpuString != null) series.add(gpuString);
+        if (gpuHash != null) series.add(gpuHash);
+        List<Color>  palette = series.stream().map(ChartGenerator::colorForMethod).collect(Collectors.toList());
         List<String> files   = orderedFiles(r);
 
         Map<String, Map<String, Double>> data = new LinkedHashMap<>();
@@ -389,15 +397,76 @@ public class ChartGenerator {
             Map<String, Double> row = new LinkedHashMap<>();
             row.put("SerialCPU",           medianTime(r, f, "SerialCPU"));
             row.put("Melhor CPU paralela", bestParallelMedian(r, f));
-            row.put(gpuMethod,             medianTime(r, f, gpuMethod));
+            if (gpuString != null) row.put(gpuString, medianTime(r, f, gpuString));
+            if (gpuHash != null) row.put(gpuHash, medianTime(r, f, gpuHash));
             data.put(shortName(f), row);
         }
 
         return barChart(
             "10. SerialCPU vs melhor CPU paralela vs GPU/OpenCL",
-            "Compara os três paradigmas centrais do trabalho.  GPU pode ter overhead de transferência.",
+            "Compara GPU por string e por hash.  Hash reduz trabalho textual, mas pode ter colisões teóricas.",
             "Texto / Obra literária", "Tempo mediano (ms)",
             data, series, palette);
+    }
+
+    /**
+     * 11. Compara granularidades de chunks no ParallelCPU.
+     */
+    private static BufferedImage chart11_ChunkGranularity(List<BenchmarkResult> r) {
+        List<String> methods = r.stream().map(x -> x.method)
+                .filter(m -> m.contains("chunks") || m.contains("dynChunks"))
+                .distinct().sorted(Comparator.comparingInt(ChartGenerator::methodOrder))
+                .collect(Collectors.toList());
+        if (methods.isEmpty()) methods = List.of("ParallelCPU-8t");
+        return barChart(
+                "11. Granularidade de chunks no ParallelCPU",
+                "Compara chunks fixos e dinâmicos.  Menor tempo = melhor granularidade para o texto.",
+                "Texto / Obra literária", "Tempo mediano (ms)",
+                buildBarData(r, orderedFiles(r), methods), methods, methodPalette(methods));
+    }
+
+    /**
+     * 12. Compara thresholds fixos e dinâmicos do ForkJoin.
+     */
+    private static BufferedImage chart12_ForkJoinThresholds(List<BenchmarkResult> r) {
+        List<String> methods = r.stream().map(x -> x.method)
+                .filter(m -> m.startsWith("ForkJoinCPU"))
+                .distinct().sorted(Comparator.comparingInt(ChartGenerator::methodOrder))
+                .collect(Collectors.toList());
+        if (methods.isEmpty()) methods = List.of("ForkJoinCPU-dyn");
+        return barChart(
+                "12. Granularidade do ForkJoin — thresholds",
+                "Threshold menor cria mais tarefas; threshold maior reduz overhead.  Menor tempo = melhor.",
+                "Texto / Obra literária", "Tempo mediano (ms)",
+                buildBarData(r, orderedFiles(r), methods), methods, methodPalette(methods));
+    }
+
+    /**
+     * 13. Decomposição do tempo da GPU em preparação e kernel/leitura.
+     */
+    private static BufferedImage chart13_GpuPreparationKernel(List<BenchmarkResult> r) {
+        String biggest = orderedFiles(r).stream()
+                .max(Comparator.comparingLong(f -> totalWords(r, f)))
+                .orElse(orderedFiles(r).isEmpty() ? "" : orderedFiles(r).get(0));
+        List<String> gpuMethods = r.stream().map(x -> x.method)
+                .filter(m -> m.startsWith("ParallelGPU"))
+                .distinct().sorted(Comparator.comparingInt(ChartGenerator::methodOrder))
+                .collect(Collectors.toList());
+        Map<String, Map<String, Double>> data = new LinkedHashMap<>();
+        for (String m : gpuMethods) {
+            Map<String, Double> row = new LinkedHashMap<>();
+            row.put("Preparação", medianMetric(r, biggest, m, "prep"));
+            row.put("Kernel/leitura", medianMetric(r, biggest, m, "kernel"));
+            row.put("Total", medianTime(r, biggest, m));
+            data.put(shortMethodLabel(m), row);
+        }
+        if (data.isEmpty()) data.put("Sem GPU", Map.of("Preparação", 0.0, "Kernel/leitura", 0.0, "Total", 0.0));
+        List<String> series = List.of("Preparação", "Kernel/leitura", "Total");
+        return barChart(
+                "13. GPU — preparação vs kernel/leitura",
+                "Mostra quanto do tempo da GPU é overhead de dados e quanto é execução/leitura do resultado.",
+                "Método GPU — " + shortName(biggest), "Tempo mediano (ms)",
+                data, series, List.of(C_CPU4, C_PSTREAM, C_GPU));
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -795,14 +864,21 @@ public class ChartGenerator {
 
         // Melhor ParallelCPU
         String bestCpu = r.stream()
-            .filter(x -> x.method.startsWith("ParallelCPU"))
+            .filter(x -> isThreadOnlyParallelCPU(x.method))
             .map(x -> x.method).distinct()
             .min(Comparator.comparingDouble(m ->
                 r.stream().filter(x -> x.method.equals(m)).mapToDouble(x -> x.timeMs).average().orElse(Double.MAX_VALUE)))
             .orElse(null);
         if (bestCpu != null) rep.add(bestCpu);
 
-        if (hasMethod(r, "ForkJoinCPU"))    rep.add("ForkJoinCPU");
+        // Melhor ForkJoin entre thresholds fixos e dinâmico
+        String bestFork = r.stream()
+            .filter(x -> x.method.startsWith("ForkJoinCPU"))
+            .map(x -> x.method).distinct()
+            .min(Comparator.comparingDouble(m ->
+                r.stream().filter(x -> x.method.equals(m)).mapToDouble(x -> x.timeMs).average().orElse(Double.MAX_VALUE)))
+            .orElse(null);
+        if (bestFork != null) rep.add(bestFork);
         if (hasMethod(r, "ParallelStream")) rep.add("ParallelStream");
 
         // Melhor VirtualThreads
@@ -814,11 +890,20 @@ public class ChartGenerator {
             .orElse(null);
         if (bestVT != null) rep.add(bestVT);
 
-        String gpu = r.stream().map(x -> x.method)
-            .filter(m -> m.startsWith("ParallelGPU")).findFirst().orElse(null);
-        if (gpu != null) rep.add(gpu);
+        String gpuHash = gpuLabelContaining(r, "Hash");
+        String gpuString = gpuLabelContaining(r, "String");
+        if (gpuHash != null) rep.add(gpuHash);
+        else if (gpuString != null) rep.add(gpuString);
 
         return rep;
+    }
+
+    private static double medianMetric(List<BenchmarkResult> r, String file, String method, String metric) {
+        List<Double> values = r.stream()
+                .filter(x -> x.file.equals(file) && x.method.equals(method))
+                .map(x -> metric.equals("prep") ? x.preparationMs : x.kernelMs)
+                .sorted().collect(Collectors.toList());
+        return median(values);
     }
 
     private static double medianTime(List<BenchmarkResult> r, String file, String method) {
@@ -827,7 +912,7 @@ public class ChartGenerator {
 
     private static double medianTimeByThreads(List<BenchmarkResult> r, String file, int threads) {
         return median(r.stream()
-            .filter(x -> x.file.equals(file) && x.method.startsWith("ParallelCPU") && x.threads == threads)
+            .filter(x -> x.file.equals(file) && isThreadOnlyParallelCPU(x.method) && x.threads == threads)
             .map(x -> x.timeMs).collect(Collectors.toList()));
     }
 
@@ -874,6 +959,12 @@ public class ChartGenerator {
             .findFirst().orElse("ParallelGPU");
     }
 
+    private static String gpuLabelContaining(List<BenchmarkResult> r, String token) {
+        return r.stream().map(x -> x.method)
+            .filter(m -> m.startsWith("ParallelGPU") && m.contains(token))
+            .findFirst().orElse(null);
+    }
+
     private static List<String> orderedFiles(List<BenchmarkResult> r) {
         List<String> order = List.of("donquixote","dracula","mobydick","moby");
         return r.stream().map(x -> x.file).distinct()
@@ -888,15 +979,29 @@ public class ChartGenerator {
         return pts.stream().sorted(Comparator.comparingDouble(p -> p.x)).collect(Collectors.toList());
     }
 
+    private static boolean isThreadOnlyParallelCPU(String method) {
+        return method != null && method.matches("ParallelCPU-\\d+t");
+    }
+
     private static int methodOrder(String m) {
         if (m.equals("SerialCPU"))           return 0;
         if (m.equals("SerialStream"))        return 1;
         if (m.startsWith("ParallelCPU"))     return 10 + extractInt(m,'-','t');
-        if (m.equals("ForkJoinCPU"))         return 80;
+        if (m.startsWith("ForkJoinCPU"))     return 80 + (m.contains("dyn") ? 50 : extractTrailingInt(m));
         if (m.startsWith("ParallelStream"))  return 90;
         if (m.startsWith("VirtualThreads"))  return 200 + extractInt(m,'-','c');
+        if (m.contains("GPU-String"))        return 10000;
+        if (m.contains("GPU-Hash"))          return 10010;
         if (m.startsWith("ParallelGPU"))     return 10000;
         return 20000;
+    }
+
+    private static int extractTrailingInt(String s) {
+        try {
+            String digits = s.replaceAll(".*?(\\d+)$", "$1");
+            return Integer.parseInt(digits);
+        } catch (Exception ignored) {}
+        return 999;
     }
 
     private static int extractInt(String s, char a, char b) {
@@ -913,7 +1018,7 @@ public class ChartGenerator {
         if (m.contains("CPU-4"))             return C_CPU4;
         if (m.contains("CPU-8"))             return C_CPU8;
         if (m.startsWith("ParallelCPU"))     return C_CPUN;
-        if (m.equals("ForkJoinCPU"))         return C_FORK;
+        if (m.startsWith("ForkJoinCPU"))     return C_FORK;
         if (m.startsWith("ParallelStream"))  return C_PSTREAM;
         if (m.startsWith("VirtualThreads"))  return C_VT;
         if (m.startsWith("ParallelGPU"))     return C_GPU;
@@ -937,15 +1042,22 @@ public class ChartGenerator {
         return switch (m) {
             case "SerialCPU"       -> "Serial CPU";
             case "SerialStream"    -> "Serial Stream";
-            case "ForkJoinCPU"     -> "ForkJoin";
             case "ParallelStream"  -> "Parallel Stream";
             case "ParallelGPU"     -> "GPU/OpenCL";
+            case "ParallelGPU-String" -> "GPU String";
+            case "ParallelGPU-String-FallbackCPU" -> "GPU String FB";
+            case "ParallelGPU-Hash" -> "GPU Hash";
+            case "ParallelGPU-Hash-FallbackCPU" -> "GPU Hash FB";
             case "ParallelGPU-FallbackCPU" -> "GPU (fallback)";
             case "Melhor CPU paralela"     -> "Melhor CPU par.";
             case "Run 1"           -> "Run 1";
             case "Run 2"           -> "Run 2";
             case "Run 3"           -> "Run 3";
-            default -> m.replace("ParallelCPU-","CPU ").replace("VirtualThreads-","VT ")
+            default -> m.replace("ParallelCPU-","CPU ")
+                        .replace("ForkJoinCPU-th", "ForkJoin th")
+                        .replace("ForkJoinCPU-dyn", "ForkJoin dyn")
+                        .replace("VirtualThreads-","VT ")
+                        .replace("dynChunks", "dyn ch")
                         .replace("chunks"," ch").replace("t"," t");
         };
     }

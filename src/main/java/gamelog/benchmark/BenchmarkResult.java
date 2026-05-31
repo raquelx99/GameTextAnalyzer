@@ -18,6 +18,8 @@ public class BenchmarkResult {
     public final int     run;
     public final long    occurrences;
     public final double  timeMs;
+    public final double  preparationMs;
+    public final double  kernelMs;
     public final boolean realGpu;
 
     // Derived metrics (set after all Serial results are known)
@@ -28,7 +30,7 @@ public class BenchmarkResult {
     public BenchmarkResult(String file, String logType, int totalWords,
                            String wordSearched, String strategyId, String method,
                            String family, int threads, int run, long occurrences,
-                           double timeMs, boolean realGpu) {
+                           double timeMs, double preparationMs, double kernelMs, boolean realGpu) {
         this.file          = file;
         this.logType       = logType;
         this.totalWords    = totalWords;
@@ -40,6 +42,8 @@ public class BenchmarkResult {
         this.run           = run;
         this.occurrences   = occurrences;
         this.timeMs        = timeMs;
+        this.preparationMs = preparationMs;
+        this.kernelMs      = kernelMs;
         this.realGpu       = realGpu;
         this.wordsPerMs    = timeMs > 0 ? (double) totalWords / timeMs : 0;
     }
@@ -50,21 +54,21 @@ public class BenchmarkResult {
                            int run, long occurrences, double timeMs) {
         this(file, logType, totalWords, wordSearched,
                 inferId(method), method, inferFamily(method), threads, run,
-                occurrences, timeMs, method.equals("ParallelGPU"));
+                occurrences, timeMs, 0.0, 0.0, method.equals("ParallelGPU") || method.equals("ParallelGPU-String") || method.equals("ParallelGPU-Hash"));
     }
 
     /** CSV header row. */
     public static String csvHeader() {
         return "file,world,total_words,word_searched,strategy_id,method,family,parallelism,run," +
-               "occurrences,time_ms,speedup,efficiency,words_per_ms,is_real_gpu";
+               "occurrences,time_ms,preparation_ms,kernel_ms,speedup,efficiency,words_per_ms,is_real_gpu";
     }
 
     /** Returns this result as a CSV row. */
     public String toCsvRow() {
         return String.format(java.util.Locale.US,
-                "%s,%s,%d,%s,%s,%s,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.2f,%s",
+                "%s,%s,%d,%s,%s,%s,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%s",
                 file, logType, totalWords, wordSearched, strategyId, method, family, threads, run,
-                occurrences, timeMs, speedup, efficiency, wordsPerMs, realGpu);
+                occurrences, timeMs, preparationMs, kernelMs, speedup, efficiency, wordsPerMs, realGpu);
     }
 
     @Override

@@ -50,6 +50,8 @@ public class ParallelGPUCounter implements WordCounter {
     private cl_program    program;
     private cl_kernel     kernel;
     private boolean       gpuDevice; // true = GPU real, false = CPU OpenCL
+    private double        lastPreparationMs;
+    private double        lastKernelMs;
 
     public ParallelGPUCounter() {
         this.fallbackMode = !tryInit();
@@ -129,35 +131,35 @@ public class ParallelGPUCounter implements WordCounter {
 
     private long gpuCount(String[] lines, String word) {
         int totalLines = lines.length;
+        long prepStart = System.nanoTime();
         byte[] wordBytes = word.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-        // Constrói buffer plano de texto (linhas concatenadas)
         int[] offsets = new int[totalLines];
         int[] lengths = new int[totalLines];
-        int   total   = 0;
+        int total = 0;
+        byte[][] encoded = new byte[totalLines][];
         for (int i = 0; i < totalLines; i++) {
             offsets[i] = total;
             byte[] b = lines[i].getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            encoded[i] = b;
             lengths[i] = b.length;
             total += b.length;
         }
         byte[] textBuf = new byte[Math.max(total, 1)];
         int pos = 0;
-        for (String line : lines) {
-            byte[] b = line.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        for (byte[] b : encoded) {
             System.arraycopy(b, 0, textBuf, pos, b.length);
             pos += b.length;
         }
         byte[] wordBuf = wordBytes.length > 0 ? wordBytes : new byte[1];
 
-        // Aloca buffers de dados (dependem do texto e da palavra)
-        cl_mem bufText   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, textBuf.length,               Pointer.to(textBuf),   null);
-        cl_mem bufWord   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, wordBuf.length,               Pointer.to(wordBuf),   null);
+        cl_mem bufText   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, textBuf.length, Pointer.to(textBuf), null);
+        cl_mem bufWord   = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, wordBuf.length, Pointer.to(wordBuf), null);
         cl_mem bufOff    = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, (long) totalLines * Integer.BYTES, Pointer.to(offsets), null);
         cl_mem bufLen    = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR, (long) totalLines * Integer.BYTES, Pointer.to(lengths), null);
-        cl_mem bufResult = clCreateBuffer(context, CL_MEM_WRITE_ONLY,                         (long) totalLines * Integer.BYTES, null,               null);
+        cl_mem bufResult = clCreateBuffer(context, CL_MEM_WRITE_ONLY, (long) totalLines * Integer.BYTES, null, null);
+        lastPreparationMs = (System.nanoTime() - prepStart) / 1_000_000.0;
 
-        // Configura argumentos do kernel (context e kernel são reutilizados)
         clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(bufText));
         clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(bufOff));
         clSetKernelArg(kernel, 2, Sizeof.cl_mem, Pointer.to(bufLen));
@@ -166,18 +168,16 @@ public class ParallelGPUCounter implements WordCounter {
         clSetKernelArg(kernel, 5, Sizeof.cl_int, Pointer.to(new int[]{totalLines}));
         clSetKernelArg(kernel, 6, Sizeof.cl_mem, Pointer.to(bufResult));
 
-        // Executa
+        long kernelStart = System.nanoTime();
         clEnqueueNDRangeKernel(queue, kernel, 1, null, new long[]{totalLines}, null, 0, null, null);
-
-        // Lê resultados
         int[] resultArr = new int[totalLines];
         clEnqueueReadBuffer(queue, bufResult, CL_TRUE, 0,
                 (long) totalLines * Integer.BYTES, Pointer.to(resultArr), 0, null, null);
+        lastKernelMs = (System.nanoTime() - kernelStart) / 1_000_000.0;
 
         long count = 0;
         for (int r : resultArr) count += r;
 
-        // Libera apenas os buffers de dados (context/queue/kernel são mantidos)
         clReleaseMemObject(bufText);
         clReleaseMemObject(bufWord);
         clReleaseMemObject(bufOff);
@@ -196,11 +196,17 @@ public class ParallelGPUCounter implements WordCounter {
     }
 
     private long fallback(String[] lines, String word) {
-        return java.util.Arrays.stream(lines).parallel().filter(word::equals).count();
+        lastPreparationMs = 0;
+        long t0 = System.nanoTime();
+        long count = java.util.Arrays.stream(lines).parallel().filter(word::equals).count();
+        lastKernelMs = (System.nanoTime() - t0) / 1_000_000.0;
+        return count;
     }
 
-    @Override public String getName()          { return fallbackMode ? "ParallelGPU-FallbackCPU" : "ParallelGPU"; }
+    @Override public String getName()          { return fallbackMode ? "ParallelGPU-String-FallbackCPU" : "ParallelGPU-String"; }
     @Override public StrategyFamily getFamily(){ return StrategyFamily.GPU_OPENCL; }
     @Override public int getParallelism()      { return 0; }
     @Override public boolean isRealGpu()       { return !fallbackMode && gpuDevice; }
+    @Override public double getLastPreparationMs() { return lastPreparationMs; }
+    @Override public double getLastKernelMs() { return lastKernelMs; }
 }

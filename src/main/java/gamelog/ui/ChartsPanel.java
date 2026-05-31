@@ -25,6 +25,8 @@ public class ChartsPanel extends JPanel {
     private final MainWindow win;
     private JTabbedPane categoryTabs;
     private JLabel statusLabel;
+    private JComboBox<String> sampleFilterCombo;
+    private String currentChartsDir = MainWindow.CHARTS_DIR;
 
     private static final class ChartInfo {
         final String title;
@@ -37,8 +39,8 @@ public class ChartsPanel extends JPanel {
             this.fileName = fileName;
         }
 
-        File file() {
-            return new File(MainWindow.CHARTS_DIR + "/" + fileName);
+        File file(String baseDir) {
+            return new File(baseDir + "/" + fileName);
         }
     }
 
@@ -80,10 +82,16 @@ public class ChartsPanel extends JPanel {
 
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         btnRow.setBackground(MainWindow.BG_PANEL);
+        sampleFilterCombo = new JComboBox<>(new String[]{"Todas as amostras", "Don Quixote", "Dracula", "Moby Dick"});
+        sampleFilterCombo.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        sampleFilterCombo.setPreferredSize(new Dimension(170, 32));
+        sampleFilterCombo.addActionListener(e -> regenFromCsv());
         JButton btnReload   = MainWindow.secondaryButton("Recarregar");
         JButton btnRegenCSV = MainWindow.primaryButton("Regenerar do CSV");
         btnReload.addActionListener(e   -> loadCharts());
         btnRegenCSV.addActionListener(e -> regenFromCsv());
+        btnRow.add(new JLabel("Filtro:"));
+        btnRow.add(sampleFilterCombo);
         btnRow.add(btnRegenCSV);
         btnRow.add(btnReload);
         header.add(btnRow, BorderLayout.EAST);
@@ -146,7 +154,13 @@ public class ChartsPanel extends JPanel {
                         "chart_04_threads_speedup.png"),
                 new ChartInfo("Eficiência paralela",
                         "Eficiência = speedup / threads. Valor ideal = 1.0. Queda revela overhead.",
-                        "chart_05_amdahl_efficiency.png")
+                        "chart_05_amdahl_efficiency.png"),
+                new ChartInfo("Chunks no ParallelCPU",
+                        "Compara chunks fixos e dinâmicos para avaliar granularidade de tarefas.",
+                        "chart_11_chunks.png"),
+                new ChartInfo("Thresholds do ForkJoin",
+                        "Compara thresholds fixos e dinâmicos no ForkJoin.",
+                        "chart_12_forkjoin_thresholds.png")
         ));
 
         result.add(new ChartCategory(
@@ -175,8 +189,11 @@ public class ChartsPanel extends JPanel {
                 "GPU vs CPU",
                 "Comparação destacada da GPU — método mais complexo do trabalho.",
                 new ChartInfo("GPU vs melhor CPU paralela vs Serial",
-                        "Resume os três protagonistas: baseline, melhor CPU paralela e GPU/OpenCL.",
-                        "chart_10_gpu_vs_cpu.png")
+                        "Resume os protagonistas: baseline, melhor CPU paralela, GPU String e GPU Hash.",
+                        "chart_10_gpu_vs_cpu.png"),
+                new ChartInfo("GPU: preparação vs kernel",
+                        "Mostra o peso do overhead de preparação de dados na GPU.",
+                        "chart_13_gpu_prep_kernel.png")
         ));
 
         return result;
@@ -200,7 +217,7 @@ public class ChartsPanel extends JPanel {
 
             int loaded = 0;
             for (ChartInfo chart : category.charts) {
-                if (chart.file().exists()) loaded++;
+                if (chart.file(currentChartsDir).exists()) loaded++;
             }
             this.loadedCount = loaded;
 
@@ -260,7 +277,7 @@ public class ChartsPanel extends JPanel {
             cardPanel.setBackground(MainWindow.BG_DARK);
             for (int i = 0; i < category.charts.size(); i++) {
                 ChartInfo chart = category.charts.get(i);
-                File f = chart.file();
+                File f = chart.file(currentChartsDir);
                 if (f.exists()) {
                     cardPanel.add(chartView(f), String.valueOf(i));
                 } else {
@@ -533,13 +550,24 @@ public class ChartsPanel extends JPanel {
                     "CSV não encontrado", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        statusLabel.setText("Regenerando gráficos...");
+        String selected = sampleFilterCombo == null ? "Todas as amostras" : (String) sampleFilterCombo.getSelectedItem();
+        statusLabel.setText("Regenerando gráficos" + (selected == null ? "" : " — " + selected) + "...");
         statusLabel.setForeground(MainWindow.ACCENT);
 
         SwingWorker<Void, Void> w = new SwingWorker<>() {
             @Override protected Void doInBackground() throws Exception {
                 List<BenchmarkResult> results = gamelog.CsvReader.read(MainWindow.CSV_PATH);
-                ChartGenerator.generateAll(results, MainWindow.CHARTS_DIR);
+                String filter = selected == null ? "Todas as amostras" : selected;
+                if (!filter.equals("Todas as amostras")) {
+                    String key = filter.toLowerCase().replace(" ", "");
+                    results = results.stream()
+                            .filter(r -> r.file.toLowerCase().replaceAll("[^a-z]", "").contains(key))
+                            .toList();
+                    currentChartsDir = MainWindow.CHARTS_DIR + "/filtered_" + key;
+                } else {
+                    currentChartsDir = MainWindow.CHARTS_DIR;
+                }
+                ChartGenerator.generateAll(results, currentChartsDir);
                 return null;
             }
             @Override protected void done() {

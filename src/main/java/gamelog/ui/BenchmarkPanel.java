@@ -26,7 +26,10 @@ public class BenchmarkPanel extends JPanel {
     // ── Controls ─────────────────────────────────────────────────────────────
     private JComboBox<String> fileCombo;
     private JTextField        eventField;
-    private JCheckBox         chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN, chkForkJoin, chkParallelStream, chkVirtual50, chkVirtual100, chkGpu;
+    private JCheckBox         chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN;
+    private JCheckBox         chkCpu8Chunks32, chkCpu8Chunks128, chkCpu8DynChunks;
+    private JCheckBox         chkForkJoin2000, chkForkJoin10000, chkForkJoinDyn;
+    private JCheckBox         chkParallelStream, chkVirtual50, chkVirtual100, chkGpuString, chkGpuHash;
     private JCheckBox         chkFullBench;
     private JButton           btnRun;
     private JProgressBar      progress;
@@ -128,11 +131,17 @@ public class BenchmarkPanel extends JPanel {
         chkCpu4           = styledCheck("ParallelCPU  4 threads", true);
         chkCpu8           = styledCheck("ParallelCPU  8 threads", true);
         chkCpuN           = styledCheck("ParallelCPU  " + BenchmarkRunner.CPU_CORES + " threads  (esta máquina)", true);
-        chkForkJoin       = styledCheck("ForkJoinCPU  (divide-and-conquer)", true);
+        chkCpu8Chunks32   = styledCheck("ParallelCPU  8 threads / 32 chunks", true);
+        chkCpu8Chunks128  = styledCheck("ParallelCPU  8 threads / 128 chunks", true);
+        chkCpu8DynChunks  = styledCheck("ParallelCPU  8 threads / chunks dinâmicos", true);
+        chkForkJoin2000   = styledCheck("ForkJoinCPU  threshold 2.000", true);
+        chkForkJoin10000  = styledCheck("ForkJoinCPU  threshold 10.000", true);
+        chkForkJoinDyn    = styledCheck("ForkJoinCPU  threshold dinâmico", true);
         chkParallelStream = styledCheck("ParallelStream  (ForkJoin comum)", true);
         chkVirtual50      = styledCheck("VirtualThreads  50 chunks", true);
         chkVirtual100     = styledCheck("VirtualThreads  100 chunks", true);
-        chkGpu            = styledCheck("ParallelGPU  (OpenCL/fallback)", true);
+        chkGpuString      = styledCheck("ParallelGPU String  (OpenCL/fallback)", true);
+        chkGpuHash        = styledCheck("ParallelGPU Hash  (OpenCL/fallback)", true);
         for (JCheckBox cb : allStrategyChecks()) {
             cb.setEnabled(true);
             p.add(cb);
@@ -346,7 +355,9 @@ public class BenchmarkPanel extends JPanel {
     private JCheckBox[] allStrategyChecks() {
         return new JCheckBox[]{
                 chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN,
-                chkForkJoin, chkParallelStream, chkVirtual50, chkVirtual100, chkGpu
+                chkCpu8Chunks32, chkCpu8Chunks128, chkCpu8DynChunks,
+                chkForkJoin2000, chkForkJoin10000, chkForkJoinDyn,
+                chkParallelStream, chkVirtual50, chkVirtual100, chkGpuString, chkGpuHash
         };
     }
 
@@ -358,11 +369,17 @@ public class BenchmarkPanel extends JPanel {
         if (chkCpu4 != null && chkCpu4.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(4));
         if (chkCpu8 != null && chkCpu8.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(8));
         if (chkCpuN != null && chkCpuN.isSelected()) strategies.add(new gamelog.counters.ParallelCPUCounter(BenchmarkRunner.CPU_CORES));
-        if (chkForkJoin != null && chkForkJoin.isSelected()) strategies.add(new gamelog.counters.ForkJoinCPUCounter());
+        if (chkCpu8Chunks32 != null && chkCpu8Chunks32.isSelected()) strategies.add(new gamelog.counters.ChunkedParallelCPUCounter(8, 32));
+        if (chkCpu8Chunks128 != null && chkCpu8Chunks128.isSelected()) strategies.add(new gamelog.counters.ChunkedParallelCPUCounter(8, 128));
+        if (chkCpu8DynChunks != null && chkCpu8DynChunks.isSelected()) strategies.add(gamelog.counters.ChunkedParallelCPUCounter.dynamic(8));
+        if (chkForkJoin2000 != null && chkForkJoin2000.isSelected()) strategies.add(new gamelog.counters.ForkJoinCPUCounter(2000));
+        if (chkForkJoin10000 != null && chkForkJoin10000.isSelected()) strategies.add(new gamelog.counters.ForkJoinCPUCounter(10000));
+        if (chkForkJoinDyn != null && chkForkJoinDyn.isSelected()) strategies.add(new gamelog.counters.ForkJoinCPUCounter());
         if (chkParallelStream != null && chkParallelStream.isSelected()) strategies.add(new gamelog.counters.ParallelStreamCounter());
         if (chkVirtual50 != null && chkVirtual50.isSelected()) strategies.add(new gamelog.counters.VirtualThreadCounter(50));
         if (chkVirtual100 != null && chkVirtual100.isSelected()) strategies.add(new gamelog.counters.VirtualThreadCounter(100));
-        if (chkGpu != null && chkGpu.isSelected()) strategies.add(new gamelog.counters.ParallelGPUCounter());
+        if (chkGpuString != null && chkGpuString.isSelected()) strategies.add(new gamelog.counters.ParallelGPUCounter());
+        if (chkGpuHash != null && chkGpuHash.isSelected()) strategies.add(new gamelog.counters.ParallelGPUHashCounter());
         return strategies;
     }
 

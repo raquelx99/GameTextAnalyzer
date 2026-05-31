@@ -109,6 +109,8 @@ public class BenchmarkRunner {
                         run,
                         occ,
                         elapsedMs,
+                        counter.getLastPreparationMs(),
+                        counter.getLastKernelMs(),
                         counter.isRealGpu()
                 );
                 results.add(r);
@@ -149,8 +151,10 @@ public class BenchmarkRunner {
     public void releaseCounters(List<WordCounter> counters) {
         for (WordCounter counter : counters) {
             if (counter instanceof ParallelCPUCounter pcc) pcc.shutdown();
+            if (counter instanceof ChunkedParallelCPUCounter cpc) cpc.shutdown();
             if (counter instanceof ForkJoinCPUCounter fjc) fjc.shutdown();
             if (counter instanceof ParallelGPUCounter gpu) gpu.release();
+            if (counter instanceof ParallelGPUHashCounter gpuHash) gpuHash.release();
         }
     }
 

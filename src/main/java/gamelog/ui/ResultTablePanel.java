@@ -14,7 +14,7 @@ public class ResultTablePanel extends JPanel {
 
     private static final String[] COLS = {
         "Arquivo", "Tipo", "Família", "Método", "Paral.", "Run",
-        "Ocorrências", "Tempo (ms)", "Speedup", "Efic.", "Palavras/ms", "GPU real"
+        "Ocorrências", "Tempo (ms)", "Prep (ms)", "Kernel (ms)", "Speedup", "Efic.", "Palavras/ms", "GPU real"
     };
 
     private final DefaultTableModel model;
@@ -55,6 +55,8 @@ public class ResultTablePanel extends JPanel {
                 r.run,
                 String.format("%,d", r.occurrences),
                 String.format(java.util.Locale.US, "%.4f", r.timeMs),
+                String.format(java.util.Locale.US, "%.4f", r.preparationMs),
+                String.format(java.util.Locale.US, "%.4f", r.kernelMs),
                 String.format(java.util.Locale.US, "%.3f", r.speedup),
                 String.format(java.util.Locale.US, "%.3f", r.efficiency),
                 String.format(java.util.Locale.US, "%.0f", r.wordsPerMs),
@@ -97,7 +99,7 @@ public class ResultTablePanel extends JPanel {
             }
         });
 
-        int[] widths = {150, 95, 120, 190, 55, 40, 100, 90, 70, 60, 100, 70};
+        int[] widths = {150, 95, 120, 210, 70, 40, 100, 90, 85, 90, 70, 60, 100, 70};
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }

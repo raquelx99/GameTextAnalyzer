@@ -309,3 +309,22 @@ A análise permite discutir não apenas qual método foi mais rápido, mas tamb�
 Os códigos-fonte completos estão disponíveis nas pastas `src/main/java/gamelog/`.
 
 > **Link do projeto:** https://github.com/SEU_USUARIO/GameTextAnalyzer *(substituir pelo link real)*
+
+---
+
+## Atualização: benchmark modular avançado
+
+A aplicação foi expandida para funcionar como um benchmark modular de estratégias de paralelização. Além dos métodos principais do enunciado, foram adicionadas variações experimentais para enriquecer a análise:
+
+- `ParallelCPU-8t-32chunks` e `ParallelCPU-8t-128chunks`: versões com chunks fixos para estudar granularidade de tarefas;
+- `ParallelCPU-8t-dynChunks`: versão com chunks dinâmicos calculados a partir do tamanho do texto;
+- `ForkJoinCPU-th2000`, `ForkJoinCPU-th10000` e `ForkJoinCPU-dyn`: versões com thresholds fixos e dinâmico;
+- `ParallelGPU-String`: versão GPU/OpenCL baseada em comparação textual por bytes;
+- `ParallelGPU-Hash`: versão GPU/OpenCL baseada em códigos inteiros (`hashCode` + tamanho da palavra), mantendo a versão por string para comparação;
+- métricas extras `preparation_ms` e `kernel_ms`, úteis para analisar o custo de preparação/transferência de dados na GPU.
+
+A aba de gráficos também passou a ter filtro por amostra. É possível gerar visualizações para todas as obras juntas ou apenas para `Don Quixote`, `Dracula` ou `Moby Dick`, facilitando a escrita do relatório por cenário.
+
+### Observação sobre a GPU por hash
+
+A versão `ParallelGPU-Hash` é uma estratégia experimental de otimização. Ela transforma cada palavra em um inteiro para reduzir o custo da comparação na GPU. Essa abordagem é mais adequada ao modelo de processamento da GPU, mas pode ter colisões teóricas de hash. Por isso, a versão `ParallelGPU-String` foi mantida como comparação mais fiel à busca textual exata.

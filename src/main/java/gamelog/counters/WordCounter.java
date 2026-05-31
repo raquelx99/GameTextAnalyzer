@@ -36,4 +36,14 @@ public interface WordCounter {
     default boolean isRealGpu() {
         return false;
     }
+
+    /** Optional: time spent preparing data before the actual count/GPU kernel. */
+    default double getLastPreparationMs() {
+        return 0.0;
+    }
+
+    /** Optional: time spent in the core computation/kernel phase. */
+    default double getLastKernelMs() {
+        return 0.0;
+    }
 }
