@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ChartGenerator — 10 gráficos curados, organizados em 4 blocos
- * diretamente alinhados com os requisitos do enunciado.
+ * ChartGenerator - 10 gráficos curados, organizados em 4 blocos
+ * alinhados com os requisitos do trabalho.
  *
- * ══════════════════════════════════════════════════════════════════════
- *  BLOCO 1 — COMPARAÇÃO DIRETA ENTRE MÉTODOS (exigência central)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  BLOCO 1 - COMPARAÇÃO DIRETA ENTRE MÉTODOS (exigência central do trabalho)
  *   1. chart_01_tempo_mediano        — tempo mediano: 1 barra por método,
  *                                      uma linha por texto. Mostra claramente
  *                                      quem é mais rápido em cada obra.
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  *                                      SerialCPU. Quanto mais rápido que o
  *                                      baseline? Responde diretamente o enunciado.
  *
- *  BLOCO 2 — IMPACTO DO NÚMERO DE NÚCLEOS (exigência explícita)
+ *  BLOCO 2 - IMPACTO DO NÚMERO DE NÚCLEOS (exigência explícita do trabalho)
  *   3. chart_03_threads_tempo        — tempo mediano do ParallelCPU de 1 a N
  *                                      threads: gráfico de linha, uma curva por texto.
  *   4. chart_04_threads_speedup      — speedup do ParallelCPU por nº de threads.
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *   5. chart_05_amdahl_efficiency    — eficiência paralela (speedup / threads).
  *                                      Revela overhead e lei de Amdahl.
  *
- *  BLOCO 3 — IMPACTO DO TAMANHO DO TEXTO (exigência explícita)
+ *  BLOCO 3 - IMPACTO DO TAMANHO DO TEXTO (exigência explícita do trabalho)
  *   6. chart_06_escala_tamanho       — eixo X = tamanho do texto (palavras),
  *                                      eixo Y = tempo mediano. Uma linha por método.
  *                                      Mostra escalabilidade.
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *                                      tamanho: compara a "velocidade" real de cada
  *                                      método independente do volume.
  *
- *  BLOCO 4 — ESTABILIDADE E VARIABILIDADE (3 amostras, exigência explícita)
+ *  BLOCO 4 - ESTABILIDADE E VARIABILIDADE (3 amostras, exigência explícita do trabalho)
  *   8. chart_08_tres_execucoes       — tempo das 3 execuções individuais de cada
  *                                      método, por obra. Mostra reprodutibilidade.
  *   9. chart_09_media_desvio         — média ± desvio padrão das 3 execuções.
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  *  10. chart_10_gpu_vs_cpu           — GPU vs melhor CPU paralela vs Serial.
  *                                      Gráfico de destaque para a discussão GPU,
  *                                      que é o método mais complexo do trabalho.
- * ══════════════════════════════════════════════════════════════════════
+ * ─────────────────────────────────────────────────────────────────────────────
  *
  * Regras de legibilidade aplicadas:
  *  – Máximo 6 séries por gráfico de barras agrupadas.
@@ -90,33 +90,34 @@ public class ChartGenerator {
         if (results == null || results.isEmpty())
             throw new IOException("Nenhum resultado para gerar gráficos.");
 
-        // Bloco 1 — Comparação direta
+        // Bloco 1 - Comparação direta
         save(chart01_TempoMediano(results),     outputDir + "/chart_01_tempo_mediano.png");
         save(chart02_SpeedupVsSerial(results),  outputDir + "/chart_02_speedup_vs_serial.png");
 
-        // Bloco 2 — Impacto de núcleos
+        // Bloco 2 - Impacto de núcleos
         save(chart03_ThreadsTempo(results),     outputDir + "/chart_03_threads_tempo.png");
         save(chart04_ThreadsSpeedup(results),   outputDir + "/chart_04_threads_speedup.png");
         save(chart05_EficienciaParalela(results),outputDir + "/chart_05_amdahl_efficiency.png");
 
-        // Bloco 3 — Impacto do tamanho
+        // Bloco 3 - Impacto do tamanho
         save(chart06_EscalaTamanho(results),    outputDir + "/chart_06_escala_tamanho.png");
         save(chart07_TempoNormalizado(results),  outputDir + "/chart_07_tempo_normalizado.png");
 
-        // Bloco 4 — Estabilidade
+        // Bloco 4 - Estabilidade
         save(chart08_TresExecucoes(results),    outputDir + "/chart_08_tres_execucoes.png");
         save(chart09_MediaDesvio(results),      outputDir + "/chart_09_media_desvio.png");
         save(chart10_GpuVsCpu(results),         outputDir + "/chart_10_gpu_vs_cpu.png");
         save(chart11_ChunkGranularity(results), outputDir + "/chart_11_chunks.png");
         save(chart12_ForkJoinThresholds(results), outputDir + "/chart_12_forkjoin_thresholds.png");
         save(chart13_GpuPreparationKernel(results), outputDir + "/chart_13_gpu_prep_kernel.png");
+        save(chart14_BestMethodSummary(results), outputDir + "/chart_14_best_method_summary.png");
 
-        System.out.println("\n  13 gráficos salvos em: " + new File(outputDir).getAbsolutePath());
+        System.out.println("\n  14 gráficos salvos em: " + new File(outputDir).getAbsolutePath());
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  BLOCO 1 — Comparação direta entre métodos
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  BLOCO 1 - Comparação direta entre métodos
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /**
      * 1. Tempo mediano de cada método por texto.
@@ -160,12 +161,12 @@ public class ChartGenerator {
             data, methods, methodPalette(methods));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  BLOCO 2 — Impacto do número de núcleos (ParallelCPU)
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  BLOCO 2 - Impacto do número de núcleos (ParallelCPU)
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /**
-     * 3. Tempo do ParallelCPU por número de threads — linha por texto.
+     * 3. Tempo do ParallelCPU por número de threads, linha por texto.
      * Mostra se mais threads sempre reduzem o tempo.
      */
     private static BufferedImage chart03_ThreadsTempo(List<BenchmarkResult> r) {
@@ -188,7 +189,7 @@ public class ChartGenerator {
             }
         }
         return lineChart(
-            "3. Impacto do número de threads — tempo de execução",
+            "3. Impacto do número de threads: tempo de execução",
             "Linha mais baixa = mais rápido.  Ponto 1 = SerialCPU como referência.",
             "Número de threads", "Tempo mediano (ms)",
             series, true, false, List.of(C_CPU4, C_VT, C_GPU));
@@ -254,9 +255,9 @@ public class ChartGenerator {
             series, true, false, List.of(C_CPU4, C_VT, C_GPU));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  BLOCO 3 — Impacto do tamanho do texto
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  BLOCO 3 - Impacto do tamanho do texto
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /**
      * 6. Escala: eixo X = palavras no texto, eixo Y = tempo mediano.
@@ -268,13 +269,13 @@ public class ChartGenerator {
         Map<String, List<PointXY>> series = new LinkedHashMap<>();
         for (String m : methods) {
             List<PointXY> pts = orderedFiles(r).stream()
-                .map(f -> new PointXY(totalWords(r, f), medianTime(r, f, m), shortName(f)))
+                .map(f -> new PointXY(totalWords(r, f), medianTime(r, f, m), shortName(f) + "\n(" + compact(totalWords(r, f)) + " pal.)"))
                 .filter(p -> p.y > 0)
                 .collect(Collectors.toList());
             if (!pts.isEmpty()) series.put(m, pts);
         }
         return lineChart(
-            "6. Escalabilidade — tempo pelo tamanho do texto",
+            "6. Escalabilidade: tempo pelo tamanho do texto",
             "Inclinação menor = escala melhor com volume.  Métodos paralelos devem ser mais planos.",
             "Tamanho do texto (palavras)", "Tempo mediano (ms)",
             series, false, false, methodPalette(methods));
@@ -305,12 +306,12 @@ public class ChartGenerator {
             data, methods, methodPalette(methods));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  BLOCO 4 — Estabilidade e variabilidade das 3 execuções
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  BLOCO 4 - Estabilidade e variabilidade das 3 execuções
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /**
-     * 8. Tempo das 3 execuções individuais — uma barra por run, por método.
+     * 8. Tempo das 3 execuções individuais, uma barra por run, por método.
      * Permite verificar se os resultados são estáveis e reproduzíveis.
      * Usa apenas o maior texto para evitar sobrecarga visual.
      */
@@ -339,7 +340,7 @@ public class ChartGenerator {
             new Color(0x6C8EF5), new Color(0x4EC994), new Color(0xF5A623));
 
         return barChart(
-            "8. Tempo das 3 execuções individuais — " + shortName(biggestFile),
+            "8. Tempo das 3 execuções individuais: " + shortName(biggestFile),
             "Barras próximas = resultado estável e reproduzível.  Variação grande = instabilidade.",
             "Método", "Tempo de execução (ms)",
             data, runLabels, runColors);
@@ -378,8 +379,7 @@ public class ChartGenerator {
 
     /**
      * 10. GPU vs melhor CPU paralela vs SerialCPU.
-     * Apenas 3 séries — máxima clareza para a discussão da GPU.
-     * Gráfico de destaque para o relatório.
+     * Apenas 3 séries. GPU String e GPU Hash são opcionais, incluídas se presentes.
      */
     private static BufferedImage chart10_GpuVsCpu(List<BenchmarkResult> r) {
         String gpuString = gpuLabelContaining(r, "String");
@@ -403,8 +403,8 @@ public class ChartGenerator {
         }
 
         return barChart(
-            "10. SerialCPU vs melhor CPU paralela vs GPU/OpenCL",
-            "Compara GPU por string e por hash.  Hash reduz trabalho textual, mas pode ter colisões teóricas.",
+            "10. CPU vs GPU: comparação por string e por hash",
+            "Compara SerialCPU, melhor CPU paralela, GPU String e GPU Hash.  Menor tempo = melhor.",
             "Texto / Obra literária", "Tempo mediano (ms)",
             data, series, palette);
     }
@@ -435,7 +435,7 @@ public class ChartGenerator {
                 .collect(Collectors.toList());
         if (methods.isEmpty()) methods = List.of("ForkJoinCPU-dyn");
         return barChart(
-                "12. Granularidade do ForkJoin — thresholds",
+                "12. Granularidade do ForkJoin: thresholds",
                 "Threshold menor cria mais tarefas; threshold maior reduz overhead.  Menor tempo = melhor.",
                 "Texto / Obra literária", "Tempo mediano (ms)",
                 buildBarData(r, orderedFiles(r), methods), methods, methodPalette(methods));
@@ -463,15 +463,102 @@ public class ChartGenerator {
         if (data.isEmpty()) data.put("Sem GPU", Map.of("Preparação", 0.0, "Kernel/leitura", 0.0, "Total", 0.0));
         List<String> series = List.of("Preparação", "Kernel/leitura", "Total");
         return barChart(
-                "13. GPU — preparação vs kernel/leitura",
+                "13. GPU: preparação vs kernel/leitura",
                 "Mostra quanto do tempo da GPU é overhead de dados e quanto é execução/leitura do resultado.",
-                "Método GPU — " + shortName(biggest), "Tempo mediano (ms)",
+                "Método GPU: " + shortName(biggest), "Tempo mediano (ms)",
                 data, series, List.of(C_CPU4, C_PSTREAM, C_GPU));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 14. Resumo final: melhor método de cada amostra, com tempo e speedup.
+     * Este gráfico/tabela é útil para a conclusão do relatório.
+     */
+    private static BufferedImage chart14_BestMethodSummary(List<BenchmarkResult> r) {
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = setup(img,
+                "14. Resumo final: melhor método por amostra",
+                "Tabela de conclusão: menor tempo mediano, speedup e família de estratégia vencedora.");
+
+        int left = 95;
+        int top = 130;
+        int rowH = 95;
+        int col1 = left;
+        int col2 = 360;
+        int col3 = 720;
+        int col4 = 930;
+        int col5 = 1130;
+        int tableW = W - left * 2;
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 16));
+        g.setColor(TEXT);
+        g.drawString("Obra / mundo narrativo", col1, top);
+        g.drawString("Melhor método", col2, top);
+        g.drawString("Tempo mediano", col3, top);
+        g.drawString("Speedup", col4, top);
+        g.drawString("Família", col5, top);
+
+        g.setColor(new Color(255,255,255,45));
+        g.drawLine(left, top + 18, left + tableW, top + 18);
+
+        int i = 0;
+        for (String f : orderedFiles(r)) {
+            String bestMethod = null;
+            double bestTime = Double.MAX_VALUE;
+            for (String m : r.stream().filter(x -> x.file.equals(f)).map(x -> x.method).distinct().toList()) {
+                double t = medianTime(r, f, m);
+                if (t > 0 && t < bestTime) {
+                    bestTime = t;
+                    bestMethod = m;
+                }
+            }
+            if (bestMethod == null) continue;
+
+            double serial = Math.max(0.0001, medianTime(r, f, "SerialCPU"));
+            double speedup = serial / bestTime;
+            final String winnerMethod = bestMethod;
+            String family = r.stream()
+                    .filter(x -> x.file.equals(f) && x.method.equals(winnerMethod))
+                    .map(x -> x.family)
+                    .findFirst().orElse("-");
+
+            int y = top + 58 + i * rowH;
+            Color rowBg = i % 2 == 0 ? new Color(255,255,255,18) : new Color(255,255,255,8);
+            g.setColor(rowBg);
+            g.fillRoundRect(left - 18, y - 30, tableW + 36, rowH - 18, 18, 18);
+
+            Color methodColor = colorForMethod(bestMethod);
+            g.setColor(methodColor);
+            g.fillRoundRect(col2 - 24, y - 18, 16, 16, 5, 5);
+
+            g.setFont(new Font("SansSerif", Font.BOLD, 19));
+            g.setColor(TEXT);
+            g.drawString(shortName(f), col1, y);
+
+            g.setFont(new Font("SansSerif", Font.BOLD, 18));
+            g.drawString(shortMethodLabel(bestMethod), col2, y);
+
+            g.setFont(new Font("SansSerif", Font.PLAIN, 18));
+            g.drawString(compact(bestTime) + " ms", col3, y);
+            g.drawString(compact(speedup) + "×", col4, y);
+            g.drawString(familyLabel(family), col5, y);
+
+            g.setFont(new Font("SansSerif", Font.ITALIC, 13));
+            g.setColor(DIMMED);
+            g.drawString("Total: " + String.format(Locale.US, "%,d", totalWords(r, f)) + " palavras", col1, y + 24);
+            i++;
+        }
+
+        g.setFont(new Font("SansSerif", Font.ITALIC, 14));
+        g.setColor(DIMMED);
+
+        g.dispose();
+        return img;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
     //  Primitivos de desenho
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
 
     private static BufferedImage barChart(String title, String subtitle,
             String xLabel, String yLabel,
@@ -492,7 +579,6 @@ public class ChartGenerator {
         int mL = 115, mR = 36, mT = 100, mB = 190;
         int pW = W - mL - mR, pH = H - mT - mB;
 
-        // Max Y with error bars considered
         double maxVal = data.values().stream()
             .flatMap(m -> m.values().stream()).mapToDouble(v -> v).max().orElse(1);
         if (errData != null) {
@@ -527,15 +613,13 @@ public class ChartGenerator {
                 int y  = mT + pH - bH;
                 Color c = palette.get(si % palette.size());
 
-                // Bar with rounded top
                 g.setColor(c);
                 g.fillRoundRect(x, y, barW, Math.max(2, bH), 6, 6);
-                // Sharp bottom corners
+
                 if (bH > 6) g.fillRect(x, y + 6, barW, Math.max(0, bH - 6));
                 g.setColor(c.darker());
                 g.drawRoundRect(x, y, barW, Math.max(2, bH), 6, 6);
 
-                // Error bar
                 if (errData != null && eRow.containsKey(m)) {
                     double err = eRow.get(m);
                     int eH = (int) Math.round(err / maxVal * pH);
@@ -549,7 +633,6 @@ public class ChartGenerator {
                     g.setStroke(new BasicStroke(1f));
                 }
 
-                // Value label above bar
                 if (val > 0 && bH > 12) {
                     String lbl = compact(val);
                     g.setFont(new Font("SansSerif", Font.BOLD, 10));
@@ -598,7 +681,6 @@ public class ChartGenerator {
 
         drawGrid(g, mL, mT, pW, pH, maxY);
 
-        // Ideal linear reference (for speedup chart)
         if (idealLine) {
             g.setColor(new Color(255, 220, 60, 70));
             g.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
@@ -610,7 +692,6 @@ public class ChartGenerator {
             g.setStroke(new BasicStroke(1f));
         }
 
-        // Efficiency = 1 reference
         if (yLabel.contains("ficiência") || yLabel.contains("Eficiência")) {
             int refY = mT + pH - (int) Math.round(1.0 / maxY * pH);
             if (refY > mT && refY < mT + pH) {
@@ -627,7 +708,6 @@ public class ChartGenerator {
 
         float[][] dashes = {null, {14f,6f}, {4f,6f}, {14f,6f,4f,6f}, {18f,6f}};
 
-        // Pass 1: lines
         record EndLabel(String name, Color col, int x, int y, double val) {}
         List<EndLabel> ends = new ArrayList<>();
 
@@ -658,7 +738,6 @@ public class ChartGenerator {
             si++;
         }
 
-        // Ideal dashed line on top
         if (idealLine && series.containsKey("Ideal (linear)")) {
             List<PointXY> pts = sorted(series.get("Ideal (linear)"));
             g.setColor(new Color(255, 220, 60, 130));
@@ -677,7 +756,6 @@ public class ChartGenerator {
             g.drawString("Ideal (linear)", mL + pW + 8, mT + 20);
         }
 
-        // Pass 2: dots
         g.setStroke(new BasicStroke(1.5f));
         si = 0;
         for (Map.Entry<String, List<PointXY>> e : series.entrySet()) {
@@ -693,7 +771,6 @@ public class ChartGenerator {
             si++;
         }
 
-        // X-axis tick labels
         g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.setColor(DIMMED);
         if (integerX) {
@@ -706,17 +783,15 @@ public class ChartGenerator {
                 g.drawString(lbl, x - g.getFontMetrics().stringWidth(lbl)/2, mT + pH + 22);
             }
         } else {
-            // Use first series' labels (book names)
             final double fMinX = minX, fMaxX = maxX;
             final int fmL = mL, fmT = mT, fpW = pW, fpH = pH;
             series.values().stream().findFirst().ifPresent(pts ->
                 pts.forEach(p -> {
                     int x = fmL + (int) Math.round((p.x - fMinX) / (fMaxX - fMinX) * fpW);
-                    g.drawString(p.label, x - g.getFontMetrics().stringWidth(p.label)/2, fmT + fpH + 22);
+                    drawGroupLabel(g, p.label, x, fmT + fpH + 22, 150);
                 }));
         }
 
-        // End-of-line labels with collision avoidance
         ends.sort(Comparator.comparingInt(EndLabel::y));
         int prevY = Integer.MIN_VALUE;
         for (EndLabel ep : ends) {
@@ -735,9 +810,9 @@ public class ChartGenerator {
         return img;
     }
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
     //  Utilitários de desenho
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
 
     private static Graphics2D setup(BufferedImage img, String title, String subtitle) {
         Graphics2D g = img.createGraphics();
@@ -842,9 +917,9 @@ public class ChartGenerator {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
     //  Helpers de dados
-    // ══════════════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────────────────────
 
     private static Map<String, Map<String, Double>> buildBarData(
             List<BenchmarkResult> r, List<String> files, List<String> methods) {
@@ -857,7 +932,7 @@ public class ChartGenerator {
         return data;
     }
 
-    /** Métodos representativos — 1 por família + melhor ParallelCPU. Máx 6. */
+    /** Métodos representativos - 1 por família + melhor ParallelCPU. Máx 6. */
     private static List<String> repMethods(List<BenchmarkResult> r) {
         List<String> rep = new ArrayList<>();
         if (hasMethod(r, "SerialCPU"))      rep.add("SerialCPU");
@@ -1035,6 +1110,18 @@ public class ChartGenerator {
         if (n.contains("dracula"))    return "Dracula";
         if (n.contains("mobydick"))   return "Moby Dick";
         return f.replace("_"," ").replace(".txt","");
+    }
+
+    private static String familyLabel(String family) {
+        if (family == null) return "-";
+        return switch (family) {
+            case "SERIAL" -> "Serial";
+            case "PARALLEL_CPU" -> "CPU paralela";
+            case "PARALLEL_STREAM" -> "ParallelStream";
+            case "VIRTUAL_THREADS" -> "Virtual Threads";
+            case "GPU_OPENCL" -> "GPU/OpenCL";
+            default -> family;
+        };
     }
 
     private static String shortMethodLabel(String m) {

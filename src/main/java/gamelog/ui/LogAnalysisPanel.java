@@ -12,17 +12,18 @@ import java.util.List;
 import java.util.stream.*;
 
 /**
- * Text Analysis Panel — lets the user browse, search and get stats on an official sample
- * without running a full benchmark.
- *
- * Features:
- *  • File picker (official .txt samples in data/samples/)
- *  • Word frequency table (ranked)
- *  • Mini inline bar chart of distribution
- *  • Search / filter: count occurrences of any word
- *  • Paginated raw token viewer (configurable page size)
- *  • Basic stats: total words, unique words, most frequent, rarest
- */
+
+* Painel de Análise de Texto, permite ao usuário navegar, pesquisar e obter estatísticas sobre uma amostra oficial
+* sem executar um benchmark completo.
+*
+* Recursos:
+* Seletor de arquivos (amostras .txt oficiais em data/samples/)
+* Tabela de frequência de palavras (classificada)
+* Mini gráfico de barras embutido de distribuição
+* Pesquisa/filtro: contagem de ocorrências de qualquer palavra
+* Visualizador de tokens brutos paginado (tamanho da página configurável)
+* Estatísticas básicas: total de palavras, palavras únicas, mais frequentes, mais raras
+*/
 public class LogAnalysisPanel extends JPanel {
 
     private final MainWindow win;

@@ -4,7 +4,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
 /**
- * Fork/Join counter — divide-and-conquer sobre o array de tokens.
+ * Fork/Join counter - divide-and-conquer sobre o array de tokens.
  *
  * Supports both dynamic and fixed thresholds so the benchmark can evaluate how
  * task granularity affects performance.

@@ -305,7 +305,7 @@ public class BenchmarkPanel extends JPanel {
                 try {
                     List<BenchmarkResult> results = get();
                     resultTable.setResults(results);
-                    statusLabel.setText("✓ Benchmark concluído — " + results.size() + " execuções registradas.");
+                    statusLabel.setText("✓ Benchmark concluído - " + results.size() + " execuções registradas.");
                     statusLabel.setForeground(MainWindow.ACCENT3);
                 } catch (Exception ex) {
                     statusLabel.setText("Erro: " + ex.getMessage());

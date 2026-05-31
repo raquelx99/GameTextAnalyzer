@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Virtual-thread counter — divides the token array into chunks and runs each
+ * Virtual-thread counter - divides the token array into chunks and runs each
  * chunk in a Java 21 virtual thread.
  *
  * This is intentionally included as an experiment: virtual threads are often

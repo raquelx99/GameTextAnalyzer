@@ -13,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Panel that shows the generated chart PNGs grouped by analysis category.
- *
- * Instead of placing many charts in a single long tab bar, this panel uses:
- * 1. category tabs (general, CPU parallelism, GPU, narrative, etc.);
- * 2. arrow navigation inside each category;
- * 3. keyboard shortcuts with left/right arrows.
- */
+* Painel que exibe os gráficos PNG gerados, agrupados por categoria de análise.
+*
+* Em vez de colocar vários gráficos em uma única barra de abas longa, este painel utiliza:
+* 1. abas de categoria (geral, paralelismo de CPU, GPU, narrativa, etc.);
+* 2. navegação por setas dentro de cada categoria;
+* 3. atalhos de teclado com setas esquerda/direita.
+*/
 public class ChartsPanel extends JPanel {
 
     private final MainWindow win;
@@ -121,7 +121,7 @@ public class ChartsPanel extends JPanel {
         }
 
         if (loaded == 0) {
-            statusLabel.setText("Nenhum gráfico encontrado — execute o benchmark primeiro.");
+            statusLabel.setText("Nenhum gráfico encontrado, execute o benchmark primeiro.");
             statusLabel.setForeground(new Color(0xFFAA44));
         } else {
             statusLabel.setText(loaded + " de " + total + " gráficos carregados. Use as setas para navegar dentro de cada aba.");
@@ -134,18 +134,21 @@ public class ChartsPanel extends JPanel {
 
         result.add(new ChartCategory(
                 "Comparação direta",
-                "Comparações diretas entre os métodos — responde à exigência central do enunciado.",
+                "Comparações diretas entre os métodos, responde à exigência central do trabalho.",
                 new ChartInfo("Tempo mediano por método",
                         "Uma barra por método em cada obra. Menor = melhor. SerialCPU é o baseline.",
                         "chart_01_tempo_mediano.png"),
                 new ChartInfo("Speedup vs. SerialCPU",
                         "Speedup = tempo_serial / tempo_método. Valor > 1 significa mais rápido que o serial.",
-                        "chart_02_speedup_vs_serial.png")
+                        "chart_02_speedup_vs_serial.png"),
+                new ChartInfo("Resumo: melhor método por amostra",
+                        "Tabela final para conclusão: vencedor, tempo mediano e speedup por obra.",
+                        "chart_14_best_method_summary.png")
         ));
 
         result.add(new ChartCategory(
                 "Impacto de núcleos",
-                "Efeito do número de threads no ParallelCPU — exigência explícita do enunciado.",
+                "Efeito do número de threads no ParallelCPU, exigência explícita do trabalho.",
                 new ChartInfo("Threads × Tempo",
                         "Uma curva por obra: como o tempo cai conforme threads aumentam.",
                         "chart_03_threads_tempo.png"),
@@ -165,7 +168,7 @@ public class ChartsPanel extends JPanel {
 
         result.add(new ChartCategory(
                 "Impacto do tamanho",
-                "Como o volume do texto afeta o tempo — exigência explícita do enunciado.",
+                "Como o volume do texto afeta o tempo, exigência explícita do trabalho.",
                 new ChartInfo("Escalabilidade por tamanho",
                         "Eixo X = palavras do texto. Eixo Y = tempo mediano. Uma curva por método.",
                         "chart_06_escala_tamanho.png"),
@@ -176,7 +179,7 @@ public class ChartsPanel extends JPanel {
 
         result.add(new ChartCategory(
                 "Estabilidade",
-                "Variabilidade entre as 3 execuções — análise estatística exigida no enunciado.",
+                "Variabilidade entre as 3 execuções, análise estatística exigida no trabalho.",
                 new ChartInfo("3 execuções individuais",
                         "Cada barra é uma execução. Barras iguais = método estável.",
                         "chart_08_tres_execucoes.png"),
@@ -187,12 +190,12 @@ public class ChartsPanel extends JPanel {
 
         result.add(new ChartCategory(
                 "GPU vs CPU",
-                "Comparação destacada da GPU — método mais complexo do trabalho.",
-                new ChartInfo("GPU vs melhor CPU paralela vs Serial",
+                "Comparação destacada da GPU, método mais complexo implementado.",
+                new ChartInfo("CPU vs GPU: String e Hash",
                         "Resume os protagonistas: baseline, melhor CPU paralela, GPU String e GPU Hash.",
                         "chart_10_gpu_vs_cpu.png"),
-                new ChartInfo("GPU: preparação vs kernel",
-                        "Mostra o peso do overhead de preparação de dados na GPU.",
+                new ChartInfo("Decomposição do tempo da GPU",
+                        "Separa preparação, execução OpenCL e leitura/retorno do resultado.",
                         "chart_13_gpu_prep_kernel.png")
         ));
 
@@ -551,7 +554,7 @@ public class ChartsPanel extends JPanel {
             return;
         }
         String selected = sampleFilterCombo == null ? "Todas as amostras" : (String) sampleFilterCombo.getSelectedItem();
-        statusLabel.setText("Regenerando gráficos" + (selected == null ? "" : " — " + selected) + "...");
+        statusLabel.setText("Regenerando gráficos" + (selected == null ? "" : " - " + selected) + "...");
         statusLabel.setForeground(MainWindow.ACCENT);
 
         SwingWorker<Void, Void> w = new SwingWorker<>() {

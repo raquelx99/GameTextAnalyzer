@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Parallel CPU counter — pool de threads reutilizável criado uma única vez
+ * Parallel CPU counter - pool de threads reutilizável criado uma única vez
  * no construtor e reaproveitado em todas as chamadas a count().
  *
  * CORREÇÃO: criar o ExecutorService dentro de count() gerava overhead

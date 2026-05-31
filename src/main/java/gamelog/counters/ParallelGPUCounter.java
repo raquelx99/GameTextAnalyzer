@@ -6,16 +6,6 @@ import static org.jocl.CL.*;
 /**
  * Parallel GPU counter via OpenCL (JOCL 2.0.4).
  *
- * CORREÇÃO PRINCIPAL — cache de contexto OpenCL.
- *   A versão original criava contexto, fila de comandos, programa e kernel
- *   do zero a cada chamada a count(). Para textos de ~200–400k palavras,
- *   esse setup OpenCL demorava mais que a contagem em si (10–30 ms só de
- *   inicialização contra ~1–2 ms de contagem paralela real).
- *
- *   A correção inicializa tudo UMA vez no construtor (init()) e reutiliza
- *   em todas as chamadas. Apenas os buffers de dados são realocados por
- *   chamada, pois dependem do tamanho do texto e da palavra.
- *
  * Fallback: se JOCL não estiver disponível ou não houver dispositivo OpenCL,
  * usa parallel stream automaticamente e registra o motivo.
  */
@@ -59,7 +49,7 @@ public class ParallelGPUCounter implements WordCounter {
 
     /**
      * Inicializa contexto, fila, programa e kernel uma única vez.
-     * Retorna false se qualquer etapa falhar — o caller ativa o fallback.
+     * Retorna false se qualquer etapa falhar - o caller ativa o fallback.
      */
     private boolean tryInit() {
         try {
@@ -88,12 +78,12 @@ public class ParallelGPUCounter implements WordCounter {
             clGetDeviceIDs(platforms[0], devType, devices.length, devices, null);
             setExceptionsEnabled(true);
 
-            // Contexto e fila de comandos — criados uma vez
+            // Contexto e fila de comandos - criados uma vez
             int[] err = new int[1];
             context = clCreateContext(null, 1, devices, null, null, err);
             queue   = clCreateCommandQueueWithProperties(context, devices[0], null, err);
 
-            // Programa e kernel — compilados uma vez
+            // Programa e kernel - compilados uma vez
             program = clCreateProgramWithSource(context, 1, new String[]{KERNEL_SRC}, null, null);
             clBuildProgram(program, 0, null, null, null, null);
             kernel  = clCreateKernel(program, "countWords", null);
@@ -108,7 +98,7 @@ public class ParallelGPUCounter implements WordCounter {
     }
 
     private boolean fail(String reason) {
-        System.out.println("[ParallelGPU] Usando fallback CPU — " + reason);
+        System.out.println("[ParallelGPU] Usando fallback CPU - " + reason);
         return false;
     }
 

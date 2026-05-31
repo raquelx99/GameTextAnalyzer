@@ -155,37 +155,34 @@ file,world,total_words,word_searched,strategy_id,method,family,parallelism,run,o
 
 ### Gráficos gerados
 
-A aplicação gera um conjunto ampliado de gráficos para cobrir diretamente os pontos pedidos no enunciado: comparação serial/paralela, variação das amostras, análise estatística, impacto do número de threads e interpretação gamificada dos textos.
+A aplicação gera um conjunto curado de **14 gráficos**, cobrindo comparação serial/paralela, impacto do número de threads, granularidade de chunks, thresholds do ForkJoin, GPU por string/hash, análise estatística e resumo final para conclusão.
 
-Na interface gráfica, os gráficos foram organizados por abas de categoria para facilitar a leitura:
+Na interface gráfica, os gráficos são organizados por abas de categoria para facilitar a leitura:
 
-- **Visão geral**: gráficos principais e estatísticos;
-- **Paralelismo CPU**: impacto de threads, eficiência e estratégias de CPU;
-- **Speedup e vazão**: speedup, throughput e melhor família;
-- **GPU e virtual threads**: comparação com GPU/OpenCL, fallback e virtual threads;
-- **Análise narrativa**: ranking dos mundos narrativos e densidade das palavras-tema.
+- **Comparação direta**: tempo, speedup e resumo final dos vencedores;
+- **Impacto de núcleos**: threads, speedup por threads, eficiência, chunks e ForkJoin;
+- **Impacto do tamanho**: escalabilidade e tempo normalizado por 100 mil palavras;
+- **Estabilidade**: três execuções individuais e média com desvio padrão;
+- **GPU vs CPU**: comparação CPU/GPU e decomposição do tempo da GPU.
 
-Dentro de cada aba, os gráficos podem ser navegados pelos botões **Anterior** e **Próximo**, pelo seletor no canto superior ou pelas setas do teclado. Isso evita que a aba fique visualmente poluída mesmo com muitos gráficos.
+Dentro de cada aba, os gráficos podem ser navegados pelos botões **Anterior** e **Próximo**, pelo seletor no canto superior ou pelas setas do teclado. A aba de gráficos também possui **filtro por amostra**, permitindo gerar visualizações para todas as obras ou apenas para `Don Quixote`, `Dracula` ou `Moby Dick`.
 
 | Gráfico | Arquivo | Para que serve |
 |---|---|---|
-| Tempo mediano por método | `charts/chart_median_time.png` | Compara SerialCPU, ParallelCPU e GPU por amostra. |
-| Impacto do número de threads | `charts/chart_thread_impact.png` | Mostra como 2, 4, 8 e núcleos disponíveis afetam o ParallelCPU. |
-| Speedup em relação ao SerialCPU | `charts/chart_speedup.png` | Mede o ganho ou perda de cada método em relação ao serial. |
-| Throughput | `charts/chart_throughput.png` | Mostra quantas palavras cada método processa por milissegundo. |
-| Variação entre as 3 execuções | `charts/chart_run_variation.png` | Evidencia as três amostras executadas por método. |
-| Tempo médio com desvio padrão | `charts/chart_mean_stddev.png` | Reforça a análise estatística e a estabilidade dos tempos. |
-| Impacto do tamanho do texto | `charts/chart_size_impact.png` | Relaciona total de palavras com tempo de execução. |
-| Tempo normalizado por 100 mil palavras | `charts/chart_normalized_100k.png` | Permite comparar textos de tamanhos diferentes de forma mais justa. |
-| Speedup da CPU paralela por threads | `charts/chart_cpu_speedup_threads.png` | Analisa especificamente o ganho do ParallelCPU conforme o número de threads. |
-| Eficiência paralela | `charts/chart_parallel_efficiency.png` | Mostra o aproveitamento das threads, usando `speedup / threads`. |
-| SerialCPU vs melhor ParallelCPU vs GPU | `charts/chart_cpu_vs_gpu.png` | Resume os principais competidores em cada amostra. |
-| Ranking por mundo narrativo | `charts/chart_ranking_world.png` | Apresenta, de forma gamificada, o método vencedor em cada obra. |
-| Densidade da palavra-tema | `charts/chart_word_density.png` | Mostra a frequência da palavra buscada a cada 10 mil palavras, conectando desempenho e análise narrativa. |
-| Melhor desempenho por família | `charts/chart_best_by_family.png` | Compara a melhor estratégia de cada família: serial, CPU paralela, stream paralela, virtual threads e GPU. |
-| Vertente CPU paralela | `charts/chart_cpu_strategy_branch.png` | Compara apenas as estratégias de CPU paralela, incluindo threads manuais, ForkJoin e ParallelStream. |
-| Vertente Virtual Threads | `charts/chart_virtual_threads_branch.png` | Compara as granularidades de virtual threads, como 50 e 100 chunks. |
-| Vertente GPU/OpenCL | `charts/chart_gpu_branch.png` | Compara GPU/fallback contra SerialCPU, melhor CPU paralela e melhor virtual thread. |
+| Tempo mediano por método | `charts/chart_01_tempo_mediano.png` | Compara os principais métodos em cada amostra. |
+| Speedup em relação ao SerialCPU | `charts/chart_02_speedup_vs_serial.png` | Mostra quantas vezes cada estratégia foi mais rápida ou lenta que o serial. |
+| Impacto do número de threads - tempo | `charts/chart_03_threads_tempo.png` | Analisa como o tempo muda ao variar 1, 2, 4, 8 e N threads. |
+| Speedup por número de threads | `charts/chart_04_threads_speedup.png` | Mostra o ganho do ParallelCPU conforme o número de threads cresce. |
+| Eficiência paralela | `charts/chart_05_amdahl_efficiency.png` | Mostra o aproveitamento das threads usando `speedup / threads`. |
+| Escalabilidade por tamanho do texto | `charts/chart_06_escala_tamanho.png` | Relaciona total de palavras com tempo mediano de execução. |
+| Tempo normalizado por 100 mil palavras | `charts/chart_07_tempo_normalizado.png` | Remove o viés de tamanho e compara a velocidade real entre textos. |
+| Três execuções individuais | `charts/chart_08_tres_execucoes.png` | Mostra as 3 amostras exigidas no enunciado e a estabilidade dos métodos. |
+| Média e desvio padrão | `charts/chart_09_media_desvio.png` | Reforça a análise estatística com média ± desvio padrão. |
+| CPU vs GPU: String e Hash | `charts/chart_10_gpu_vs_cpu.png` | Compara SerialCPU, melhor CPU paralela, GPU String e GPU Hash. |
+| Granularidade de chunks | `charts/chart_11_chunks.png` | Compara chunks fixos e dinâmicos no ParallelCPU. |
+| Thresholds do ForkJoin | `charts/chart_12_forkjoin_thresholds.png` | Compara thresholds fixos e dinâmicos no ForkJoin. |
+| Decomposição do tempo da GPU | `charts/chart_13_gpu_prep_kernel.png` | Separa preparação, execução OpenCL e leitura do resultado. |
+| Resumo final - melhor método por amostra | `charts/chart_14_best_method_summary.png` | Tabela-resumo para conclusão do relatório: vencedor, tempo, speedup e família. |
 
 ### Discussões esperadas
 
@@ -298,8 +295,8 @@ A análise permite discutir não apenas qual método foi mais rápido, mas tamb�
 - Java ExecutorService documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html
 - Java Virtual Threads documentation: https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html
 - Java System.nanoTime documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#nanoTime()
-- JOCL — Java bindings for OpenCL: https://github.com/gpu/JOCL
-- OpenCL Specification — Khronos Group: https://www.khronos.org/opencl/
+- JOCL - Java bindings for OpenCL: https://github.com/gpu/JOCL
+- OpenCL Specification - Khronos Group: https://www.khronos.org/opencl/
 - Amdahl, G. M. Validity of the Single Processor Approach to Achieving Large Scale Computing Capabilities. AFIPS, 1967.
 
 ---

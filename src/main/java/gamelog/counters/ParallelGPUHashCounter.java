@@ -78,7 +78,7 @@ public class ParallelGPUHashCounter implements WordCounter {
     }
 
     private boolean fail(String reason) {
-        System.out.println("[ParallelGPUHash] Usando fallback CPU — " + reason);
+        System.out.println("[ParallelGPUHash] Usando fallback CPU - " + reason);
         return false;
     }
 
