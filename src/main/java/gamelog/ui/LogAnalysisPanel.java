@@ -28,32 +28,32 @@ public class LogAnalysisPanel extends JPanel {
 
     private final MainWindow win;
 
-    // State
+    // Estado
     private String[] currentLines = new String[0];
     private String   currentFile  = "";
 
-    // Controls
+    // Controles
     private JComboBox<String> fileCombo;
     private JTextField        searchField;
     private JLabel            searchResult;
     private JLabel            statusLbl;
     private JProgressBar      loadBar;
 
-    // Stats labels
+    // Rótulos de estatísticas
     private JLabel lblTotal, lblUnique, lblMostFreq, lblRarest, lblAvgLine;
 
-    // Frequency table
+    // Tabela de frequência
     private DefaultTableModel freqModel;
     private JTable            freqTable;
 
-    // Tokenized text viewer
+    // Visualizador de texto tokenizado
     private JTextArea         rawArea;
     private JLabel            pageLabel;
     private int               currentPage = 0;
     private int               pageSize    = 500;
     private JComboBox<Integer> pageSizeCombo;
 
-    // Mini chart (distribution)
+    // Mini gráfico (distribuição)
     private DistributionChart distChart;
 
     public LogAnalysisPanel(MainWindow win) {
@@ -63,7 +63,7 @@ public class LogAnalysisPanel extends JPanel {
         build();
     }
 
-    // ── Build ─────────────────────────────────────────────────────────────────
+    // ── Construção ─────────────────────────────────────────────────────────────────
 
     private void build() {
         add(buildHeader(), BorderLayout.NORTH);
@@ -105,7 +105,7 @@ public class LogAnalysisPanel extends JPanel {
                 BorderFactory.createMatteBorder(0,0,0,1,Theme.DIVIDER),
                 BorderFactory.createEmptyBorder(20,20,20,20)));
 
-        // ── File selector ─────────────────────────────────────────────────
+        // ── Seletor de arquivo ─────────────────────────────────────────────────
         p.add(sectionLbl("Amostra literária"));
         p.add(Box.createVerticalStrut(6));
         fileCombo = Theme.comboBox();
@@ -123,7 +123,7 @@ public class LogAnalysisPanel extends JPanel {
         p.add(Theme.divider());
         p.add(Box.createVerticalStrut(16));
 
-        // ── Stats cards ───────────────────────────────────────────────────
+        // ── Cards de estatísticas ───────────────────────────────────────────────────
         p.add(sectionLbl("Estatísticas"));
         p.add(Box.createVerticalStrut(10));
 
@@ -135,14 +135,14 @@ public class LogAnalysisPanel extends JPanel {
 
         for (JLabel[] pair : new JLabel[][]{{lblTotal,null},{lblUnique,null},
                 {lblMostFreq,null},{lblRarest,null},{lblAvgLine,null}}) {
-            // already added via statRow helper below
+            // já adicionados via helper statRow abaixo
         }
         p.add(buildStatCard());
         p.add(Box.createVerticalStrut(20));
         p.add(Theme.divider());
         p.add(Box.createVerticalStrut(16));
 
-        // ── Search ────────────────────────────────────────────────────────
+        // ── Busca ────────────────────────────────────────────────────────
         p.add(sectionLbl("Buscar palavra"));
         p.add(Box.createVerticalStrut(6));
         searchField = Theme.inputField("Ex: whale, blood, quijote");
@@ -191,7 +191,7 @@ public class LogAnalysisPanel extends JPanel {
         return p;
     }
 
-    // ── Tabs ──────────────────────────────────────────────────────────────────
+    // ── Abas ──────────────────────────────────────────────────────────────────
 
     private JPanel buildDistributionTab() {
         JPanel p = new JPanel(new BorderLayout());
@@ -229,7 +229,7 @@ public class LogAnalysisPanel extends JPanel {
         freqTable.setSelectionBackground(Theme.BG_ACTIVE);
         freqTable.setSelectionForeground(Theme.TEXT_PRI);
 
-        // Custom renderer: colour the event name, draw bar in last col
+        // Renderer personalizado: colore o nome da palavra, desenha barra na última coluna
         freqTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int row, int col) {
@@ -244,7 +244,7 @@ public class LogAnalysisPanel extends JPanel {
                     setFont(new Font(Font.MONOSPACED, Font.BOLD, 11));
                 }
                 if (col == 4) {
-                    // Draw inline mini-bar instead of text
+                    // Desenha mini barra inline em vez de texto
                     setText("");
                     return this;
                 }
@@ -252,7 +252,7 @@ public class LogAnalysisPanel extends JPanel {
             }
         });
 
-        // Bar column renderer
+        // Renderer da coluna de barra
         freqTable.getColumnModel().getColumn(4).setCellRenderer(
             new TableCellRenderer() {
                 @Override public Component getTableCellRendererComponent(
@@ -304,7 +304,7 @@ public class LogAnalysisPanel extends JPanel {
         p.setBackground(Theme.BG_BASE);
         p.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
-        // Controls bar
+        // Barra de controles
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         bar.setBackground(Theme.BG_BASE);
 
@@ -352,7 +352,7 @@ public class LogAnalysisPanel extends JPanel {
         return p;
     }
 
-    // ── Logic ─────────────────────────────────────────────────────────────────
+    // ── Lógica ─────────────────────────────────────────────────────────────────
 
     private void loadFile() {
         String sel = (String) fileCombo.getSelectedItem();
@@ -474,7 +474,7 @@ public class LogAnalysisPanel extends JPanel {
         if (fileCombo.getItemCount() == 0) fileCombo.addItem("(nenhuma amostra encontrada)");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Auxiliares ───────────────────────────────────────────────────────────────
 
     private JLabel sectionLbl(String text) {
         JLabel l = new JLabel(text);
@@ -484,9 +484,9 @@ public class LogAnalysisPanel extends JPanel {
         return l;
     }
 
-    // statRow labels are stored in fields; build them inline
+    // Os rótulos de statRow são armazenados em campos; construídos inline
     private JLabel statRow(String label, String defaultVal) {
-        return new JLabel(defaultVal);  // actual setup in buildStatCard
+        return new JLabel(defaultVal);  // configuração real em buildStatCard
     }
 
     private JPanel buildStatCard() {
@@ -513,7 +513,7 @@ public class LogAnalysisPanel extends JPanel {
         return card;
     }
 
-    // ── Inner: distribution bar chart ─────────────────────────────────────────
+    // ── Interno: gráfico de barras de distribuição ─────────────────────────────────────────
 
     static class DistributionChart extends JPanel {
         private Map<String, Long> data = new LinkedHashMap<>();
@@ -558,7 +558,7 @@ public class LogAnalysisPanel extends JPanel {
 
             long maxVal = entries.stream().mapToLong(Map.Entry::getValue).max().orElse(1);
 
-            // Title
+            // Título
             g2.setFont(new Font("SansSerif", Font.BOLD, 13));
             g2.setColor(Theme.TEXT_PRI);
             g2.drawString("Distribuição de Palavras (top " + n + ")", padL, padT - 6);
@@ -576,22 +576,22 @@ public class LogAnalysisPanel extends JPanel {
 
                 Color c = palette[i % palette.length];
 
-                // Background track
+                // Trilha de fundo
                 g2.setColor(new Color(c.getRed(),c.getGreen(),c.getBlue(),20));
                 g2.fillRoundRect(padL, y, plotW, barH, 4, 4);
 
-                // Bar
+                // Barra
                 g2.setColor(c);
                 g2.fillRoundRect(padL, y, Math.max(w, 6), barH, 4, 4);
 
-                // Event name
+                // Nome da palavra
                 g2.setFont(new Font(Font.MONOSPACED, Font.BOLD, 11));
                 g2.setColor(Theme.TEXT_PRI);
                 FontMetrics fm = g2.getFontMetrics();
                 int ty = y + barH/2 + fm.getAscent()/2 - 1;
                 g2.drawString(e.getKey(), padL - fm.stringWidth(e.getKey()) - 8, ty);
 
-                // Count + pct
+                // Contagem + percentual
                 double pct = 100.0 * e.getValue() / total;
                 String info = String.format("%,d  (%.1f%%)", e.getValue(), pct);
                 g2.setFont(Theme.FONT_SMALL);

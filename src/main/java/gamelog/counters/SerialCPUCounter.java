@@ -1,8 +1,8 @@
 package gamelog.counters;
 
 /**
- * Serial CPU counter - iterates over every token with a simple loop.
- * Baseline for speedup calculations.
+ * Contador serial de CPU - itera sobre cada token com um loop simples.
+ * Baseline para os cálculos de speedup.
  */
 public class SerialCPUCounter implements WordCounter {
 

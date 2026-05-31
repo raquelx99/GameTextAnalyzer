@@ -335,7 +335,7 @@ public class ChartsPanel extends JPanel {
                 scroll.getVerticalScrollBar().setUnitIncrement(24);
                 scroll.getHorizontalScrollBar().setUnitIncrement(24);
 
-                // ── Zoom toolbar ────────────────────────────────────────────
+                // ── Barra de ferramentas de zoom ────────────────────────────────────────────
                 JLabel zoomLabel = new JLabel("100%");
                 zoomLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
                 zoomLabel.setForeground(MainWindow.TEXT_MAIN);
@@ -368,13 +368,13 @@ public class ChartsPanel extends JPanel {
                 zoomInBtn.addActionListener(e  -> slider.setValue(Math.min(300, slider.getValue() + 15)));
                 zoomOutBtn.addActionListener(e -> slider.setValue(Math.max(10,  slider.getValue() - 15)));
 
-                // Ctrl + scroll wheel
+                // Ctrl + roda do mouse
                 scroll.addMouseWheelListener(e -> {
                     if (e.isControlDown()) {
                         int delta = e.getWheelRotation() < 0 ? 15 : -15;
                         slider.setValue(Math.max(10, Math.min(300, slider.getValue() + delta)));
                     } else {
-                        // pass to scroll pane
+                        // repassa ao scroll pane
                         scroll.getVerticalScrollBar().setValue(
                             scroll.getVerticalScrollBar().getValue() + e.getWheelRotation() * 24);
                     }
@@ -401,7 +401,7 @@ public class ChartsPanel extends JPanel {
                 p.add(scroll, BorderLayout.CENTER);
                 p.add(info, BorderLayout.SOUTH);
 
-                // Auto-fit after layout is realized
+                // Ajuste automático após o layout ser realizado
                 SwingUtilities.invokeLater(() -> applyFitZoom(scroll, img, slider));
 
             } catch (IOException ex) {

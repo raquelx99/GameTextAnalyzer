@@ -16,14 +16,14 @@ import java.util.*;
 import java.util.List;
 
 /**
- * Panel for configuring and running benchmarks.
- * Runs the benchmark on a background thread and streams output to a log area.
+ * Painel para configurar e executar benchmarks.
+ * Executa o benchmark em uma thread de segundo plano e transmite o output para a área de log.
  */
 public class BenchmarkPanel extends JPanel {
 
     private final MainWindow win;
 
-    // ── Controls ─────────────────────────────────────────────────────────────
+    // ── Controles ─────────────────────────────────────────────────────────────
     private JComboBox<String> fileCombo;
     private JTextField        eventField;
     private JCheckBox         chkSerial, chkStreamSerial, chkCpu2, chkCpu4, chkCpu8, chkCpuN;
@@ -36,7 +36,7 @@ public class BenchmarkPanel extends JPanel {
     private JTextArea         logArea;
     private JLabel            statusLabel;
 
-    // ── Result table ─────────────────────────────────────────────────────────
+    // ── Tabela de resultados ─────────────────────────────────────────────────────────
     private ResultTablePanel  resultTable;
 
     public BenchmarkPanel(MainWindow win) {
@@ -47,7 +47,7 @@ public class BenchmarkPanel extends JPanel {
     }
 
     private void build() {
-        // ── Header ────────────────────────────────────────────────────────
+        // ── Cabeçalho ────────────────────────────────────────────────────────
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Theme.BG_SURFACE);
         header.setBorder(BorderFactory.createCompoundBorder(
@@ -57,7 +57,7 @@ public class BenchmarkPanel extends JPanel {
         header.add(MainWindow.subLabel("Compara estratégias seriais, CPU paralela, streams, virtual threads e GPU/OpenCL"), BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
-        // ── Split: config left / output right ────────────────────────────
+        // ── Split: configuração à esquerda / output à direita ────────────────────────────
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                 buildConfigPanel(), buildOutputPanel());
         split.setDividerLocation(310);
@@ -67,7 +67,7 @@ public class BenchmarkPanel extends JPanel {
         add(split, BorderLayout.CENTER);
     }
 
-    // ── Config panel (left) ───────────────────────────────────────────────────
+    // ── Painel de configuração (esquerda) ───────────────────────────────────────────────────
 
     private JPanel buildConfigPanel() {
         JPanel p = new JPanel();
@@ -77,13 +77,13 @@ public class BenchmarkPanel extends JPanel {
                 BorderFactory.createMatteBorder(0, 0, 0, 1, MainWindow.BORDER_COL),
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)));
 
-        // Full benchmark toggle
+        // Alternância do benchmark completo
         chkFullBench = styledCheck("Benchmark oficial (Don Quixote, Dracula, Moby Dick)", true);
         chkFullBench.addActionListener(e -> updateFileComboState());
         p.add(chkFullBench);
         p.add(Box.createVerticalStrut(16));
 
-        // File selector
+        // Seletor de arquivo
         p.add(fieldLabel("Amostra / mundo narrativo"));
         p.add(Box.createVerticalStrut(4));
         fileCombo = new JComboBox<>();
@@ -93,7 +93,7 @@ public class BenchmarkPanel extends JPanel {
         p.add(fileCombo);
         p.add(Box.createVerticalStrut(14));
 
-        // Event field
+        // Campo de palavra
         p.add(fieldLabel("Palavra a buscar"));
         p.add(Box.createVerticalStrut(4));
         eventField = styledTextField("whale");
@@ -101,7 +101,7 @@ public class BenchmarkPanel extends JPanel {
         p.add(eventField);
         p.add(Box.createVerticalStrut(6));
 
-        // Suggested events
+        // Sugestões de palavras
         JPanel hints = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         hints.setBackground(MainWindow.BG_PANEL);
         String[] suggestions = {"quijote", "sancho", "caballero", "blood", "night", "vampire",
@@ -122,7 +122,7 @@ public class BenchmarkPanel extends JPanel {
         p.add(hints);
         p.add(Box.createVerticalStrut(16));
 
-        // Methods
+        // Métodos
         p.add(fieldLabel("Estratégias a comparar"));
         p.add(Box.createVerticalStrut(6));
         chkSerial         = styledCheck("SerialCPU  (loop simples)", true);
@@ -157,7 +157,7 @@ public class BenchmarkPanel extends JPanel {
 
         p.add(Box.createVerticalGlue());
 
-        // Buttons
+        // Botões
         btnRun = MainWindow.primaryButton("▶  Executar Benchmark");
         btnRun.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         btnRun.setAlignmentX(LEFT_ALIGNMENT);
@@ -174,14 +174,14 @@ public class BenchmarkPanel extends JPanel {
         return p;
     }
 
-    // ── Output panel (right) ──────────────────────────────────────────────────
+    // ── Painel de output (direita) ──────────────────────────────────────────────────
 
     private JPanel buildOutputPanel() {
         JPanel p = new JPanel(new BorderLayout(0, 8));
         p.setBackground(MainWindow.BG_DARK);
         p.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        // Progress + status
+        // Barra de progresso + status
         JPanel topBar = new JPanel(new BorderLayout(8, 0));
         topBar.setBackground(MainWindow.BG_DARK);
 
@@ -200,7 +200,7 @@ public class BenchmarkPanel extends JPanel {
         topBar.add(progress,    BorderLayout.SOUTH);
         p.add(topBar, BorderLayout.NORTH);
 
-        // Tab: log / results
+        // Abas: log / resultados
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(MainWindow.BG_DARK);
         tabs.setForeground(MainWindow.TEXT_MAIN);
@@ -219,7 +219,7 @@ public class BenchmarkPanel extends JPanel {
         return p;
     }
 
-    // ── Benchmark execution ───────────────────────────────────────────────────
+    // ── Execução do benchmark ───────────────────────────────────────────────────
 
     private void runBenchmark() {
         boolean fullBench = chkFullBench.isSelected();
@@ -240,7 +240,7 @@ public class BenchmarkPanel extends JPanel {
         progress.setIndeterminate(true);
         statusLabel.setText("Executando benchmark...");
 
-        // Redirect System.out to the log area
+        // Redireciona System.out para a área de log
         PrintStream logStream = new PrintStream(new OutputStream() {
             private final StringBuilder sb = new StringBuilder();
             public void write(int b) {
@@ -383,7 +383,7 @@ public class BenchmarkPanel extends JPanel {
         return strategies;
     }
 
-    // ── Style helpers ─────────────────────────────────────────────────────────
+    // ── Auxiliares de estilo ─────────────────────────────────────────────────────────
 
     private JLabel fieldLabel(String text) {
         JLabel lbl = new JLabel(text);

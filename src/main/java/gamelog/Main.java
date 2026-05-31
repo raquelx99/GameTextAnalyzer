@@ -10,9 +10,9 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Entry point.
- *  - Default: launches the Swing GUI
- *  - With --console flag: runs the original text menu
+ * Ponto de entrada.
+ *  - Padrão: abre a interface gráfica Swing
+ *  - Com a flag --console: executa o menu de texto original
  */
 public class Main {
 
@@ -23,7 +23,7 @@ public class Main {
 
     static final String SAMPLE_DIR = DATA_DIR + "/samples";
 
-    /** Official assignment samples interpreted as narrative game worlds. */
+    /** Amostras oficiais do trabalho interpretadas como mundos narrativos de jogo. */
     static final String[][] OFFICIAL_FILES = SampleConfig.officialBenchmarkEntries();
 
     public static void main(String[] args) throws Exception {
@@ -38,7 +38,7 @@ public class Main {
 
     private static void setupLookAndFeel() {
         try {
-            // FlatLaf is optional. The project still runs with pure Swing if the jar is absent.
+            // FlatLaf é opcional. O projeto ainda funciona com Swing puro se o jar estiver ausente.
             Class<?> laf = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
             laf.getMethod("setup").invoke(null);
         } catch (Exception ignored) {

@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Central registry of benchmark strategies.
+ * Registro central das estratégias de benchmark.
  *
- * To add a new method to the application, create a new WordCounter
- * implementation and add it here. The benchmark runner, CSV and charts will
- * automatically include it.
+ * Para adicionar um novo método à aplicação, crie uma nova implementação de WordCounter
+ * e adicione aqui. O benchmark runner, o CSV e os gráficos o incluirão automaticamente.
  */
 public final class StrategyRegistry {
     private StrategyRegistry() {}
@@ -20,7 +19,7 @@ public final class StrategyRegistry {
         strategies.add(new SerialCPUCounter());
         strategies.add(new SerialStreamCounter());
 
-        // Traditional fixed-thread strategies
+        // Estratégias tradicionais com threads fixas
         strategies.add(new ParallelCPUCounter(2));
         strategies.add(new ParallelCPUCounter(4));
         strategies.add(new ParallelCPUCounter(8));
@@ -28,12 +27,12 @@ public final class StrategyRegistry {
             strategies.add(new ParallelCPUCounter(CPU_CORES));
         }
 
-        // Chunk granularity experiments: fixed and dynamic
+        // Experimentos de granularidade de chunk: fixos e dinâmicos
         strategies.add(new ChunkedParallelCPUCounter(8, 32));
         strategies.add(new ChunkedParallelCPUCounter(8, 128));
         strategies.add(ChunkedParallelCPUCounter.dynamic(8));
 
-        // ForkJoin granularity experiments: fixed thresholds and dynamic
+        // Experimentos de granularidade ForkJoin: thresholds fixos e dinâmico
         strategies.add(new ForkJoinCPUCounter(2_000));
         strategies.add(new ForkJoinCPUCounter(10_000));
         strategies.add(new ForkJoinCPUCounter());
@@ -42,7 +41,7 @@ public final class StrategyRegistry {
         strategies.add(new VirtualThreadCounter(50));
         strategies.add(new VirtualThreadCounter(100));
 
-        // GPU variants: exact string comparison and hash-based numeric comparison
+        // Variantes GPU: comparação exata de string e comparação numérica baseada em hash
         strategies.add(new ParallelGPUCounter());
         strategies.add(new ParallelGPUHashCounter());
         return strategies;

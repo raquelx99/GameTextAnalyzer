@@ -15,8 +15,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Panel with the official assignment samples and their gamified interpretation.
- * Also allows the user to import custom .txt files into data/samples/.
+ * Painel com as amostras oficiais do trabalho e sua interpretação gamificada.
+ * Também permite ao usuário importar arquivos .txt personalizados para data/samples/.
  */
 public class SamplesPanel extends JPanel {
 

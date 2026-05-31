@@ -3,7 +3,7 @@ package gamelog.benchmark;
 import gamelog.counters.StrategyFamily;
 
 /**
- * Holds the result of a single benchmark run.
+ * Armazena o resultado de uma única execução de benchmark.
  */
 public class BenchmarkResult {
 
@@ -22,7 +22,7 @@ public class BenchmarkResult {
     public final double  kernelMs;
     public final boolean realGpu;
 
-    // Derived metrics (set after all Serial results are known)
+    // Métricas derivadas (definidas após todos os resultados Serial serem conhecidos)
     public double speedup         = 1.0;
     public double efficiency      = 1.0;
     public double wordsPerMs      = 0.0;
@@ -48,7 +48,7 @@ public class BenchmarkResult {
         this.wordsPerMs    = timeMs > 0 ? (double) totalWords / timeMs : 0;
     }
 
-    /** Backward-compatible constructor used by older CSV readers/code paths. */
+    /** Construtor retrocompatível usado por leitores de CSV mais antigos e caminhos de código legados. */
     public BenchmarkResult(String file, String logType, int totalWords,
                            String wordSearched, String method, int threads,
                            int run, long occurrences, double timeMs) {
@@ -57,13 +57,13 @@ public class BenchmarkResult {
                 occurrences, timeMs, 0.0, 0.0, method.equals("ParallelGPU") || method.equals("ParallelGPU-String") || method.equals("ParallelGPU-Hash"));
     }
 
-    /** CSV header row. */
+    /** Linha de cabeçalho do CSV. */
     public static String csvHeader() {
         return "file,world,total_words,word_searched,strategy_id,method,family,parallelism,run," +
                "occurrences,time_ms,preparation_ms,kernel_ms,speedup,efficiency,words_per_ms,is_real_gpu";
     }
 
-    /** Returns this result as a CSV row. */
+    /** Retorna este resultado como uma linha CSV. */
     public String toCsvRow() {
         return String.format(java.util.Locale.US,
                 "%s,%s,%d,%s,%s,%s,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%s",

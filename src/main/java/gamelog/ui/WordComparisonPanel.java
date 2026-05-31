@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Compares selected words across the official literary samples.
+ * Compara palavras selecionadas entre as amostras literárias oficiais.
  *
- * This panel keeps the gamified angle without changing the required datasets:
- * each word is treated as a narrative signal and each book as a game world.
+ * Este painel mantém o enfoque gamificado sem alterar os datasets exigidos:
+ * cada palavra é tratada como um sinal narrativo e cada livro como um mundo de jogo.
  */
 public class WordComparisonPanel extends JPanel {
 

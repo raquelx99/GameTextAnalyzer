@@ -8,7 +8,7 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Scrollable table panel that displays benchmark results.
+ * Painel de tabela com scroll que exibe os resultados do benchmark.
  */
 public class ResultTablePanel extends JPanel {
 

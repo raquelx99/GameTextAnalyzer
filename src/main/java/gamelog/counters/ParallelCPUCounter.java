@@ -50,9 +50,9 @@ public class ParallelCPUCounter implements WordCounter {
                 total += f.get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while counting", e);
+                throw new RuntimeException("Interrompido durante a contagem", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Error in parallel count", e);
+                throw new RuntimeException("Erro na contagem paralela", e);
             }
         }
         return total;

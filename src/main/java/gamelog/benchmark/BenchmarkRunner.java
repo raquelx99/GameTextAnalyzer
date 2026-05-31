@@ -8,35 +8,35 @@ import java.io.File;
 import java.util.*;
 
 /**
- * Orchestrates benchmark runs across all strategies, files, and searched words.
+ * Orquestra as execuções de benchmark para todas as estratégias, arquivos e palavras buscadas.
  *
- * Strategy:
- *  1. Load/tokenize the text once.
- *  2. Warm up the JVM with one discarded run per strategy.
- *  3. Run each strategy {@code RUNS} times, collecting timed results.
- *  4. Compute speedup/efficiency relative to the SerialCPU median.
+ * Estratégia:
+ *  1. Carrega/tokeniza o texto uma única vez.
+ *  2. Aquece a JVM com uma execução descartada por estratégia (warmup).
+ *  3. Executa cada estratégia {@code RUNS} vezes, coletando resultados cronometrados.
+ *  4. Calcula speedup/eficiência em relação à mediana do SerialCPU.
  */
 public class BenchmarkRunner {
 
-    /** Number of timed runs per method (warmup run is separate and discarded). */
+    /** Número de execuções cronometradas por método (a execução de warmup é separada e descartada). */
     public static final int RUNS = 3;
 
-    /** Workers available on the current machine, used for dynamic strategies. */
+    /** Workers disponíveis na máquina atual, usados para estratégias dinâmicas. */
     public static final int CPU_CORES = StrategyRegistry.CPU_CORES;
 
-    /** Strategies used in the benchmark (in display order). */
+    /** Estratégias utilizadas no benchmark (na ordem de exibição). */
     private static final List<WordCounter> COUNTERS = Collections.unmodifiableList(StrategyRegistry.defaultStrategies());
 
     public static List<WordCounter> defaultCounters() {
         return COUNTERS;
     }
 
-    /** Runs the full benchmark for one text file / word combination. */
+    /** Executa o benchmark completo para uma combinação de arquivo de texto e palavra. */
     public List<BenchmarkResult> run(String filePath, String eventToCount) {
         return run(filePath, eventToCount, COUNTERS);
     }
 
-    /** Runs a benchmark using a custom list of strategies. */
+    /** Executa um benchmark usando uma lista personalizada de estratégias. */
     public List<BenchmarkResult> run(String filePath, String eventToCount, List<WordCounter> counters) {
         eventToCount = FileUtils.normalizeQuery(eventToCount);
         if (eventToCount.isEmpty()) {
@@ -77,7 +77,7 @@ public class BenchmarkRunner {
         String logType = deriveLogType(file.getName());
         int total = lines.length;
 
-        System.out.println("  [warmup] running one discarded pass per strategy...");
+        System.out.println("  [warmup] executando uma passagem descartada por estratégia...");
         for (WordCounter counter : counters) {
             counter.count(lines, eventToCount);
         }
@@ -95,7 +95,7 @@ public class BenchmarkRunner {
                 double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;
                 times.add(elapsedMs);
 
-                methodName = counter.getName(); // GPU fallback may update the visible name after count()
+                methodName = counter.getName(); // o fallback do GPU pode atualizar o nome visível após count()
 
                 BenchmarkResult r = new BenchmarkResult(
                         file.getName(),

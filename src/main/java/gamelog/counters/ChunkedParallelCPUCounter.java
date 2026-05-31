@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Parallel CPU counter with explicit task chunking.
+ * Contador CPU paralelo com chunking explícito de tarefas.
  *
- * Difference from ParallelCPUCounter:
- * - ParallelCPUCounter creates one chunk per worker thread.
- * - This class can create more chunks than threads, allowing experiments with
- *   task granularity and load balancing.
+ * Diferença em relação ao ParallelCPUCounter:
+ * - ParallelCPUCounter cria um chunk por thread worker.
+ * - Esta classe pode criar mais chunks do que threads, permitindo experimentos com
+ *   granularidade de tarefas e balanceamento de carga.
  *
- * Modes:
- * - fixed chunks: a predefined number, e.g. 32 or 128 chunks;
- * - dynamic chunks: calculated from text size and worker count.
+ * Modos:
+ * - chunks fixos: um número predefinido, por ex. 32 ou 128 chunks;
+ * - chunks dinâmicos: calculados a partir do tamanho do texto e do número de workers.
  */
 public class ChunkedParallelCPUCounter implements WordCounter {
     private final int threadCount;
@@ -70,9 +70,9 @@ public class ChunkedParallelCPUCounter implements WordCounter {
                 total += f.get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while counting", e);
+                throw new RuntimeException("Interrompido durante a contagem", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Error in chunked parallel count", e);
+                throw new RuntimeException("Erro na contagem paralela com chunks", e);
             }
         }
         return total;
@@ -81,8 +81,8 @@ public class ChunkedParallelCPUCounter implements WordCounter {
     private int effectiveChunks(int n) {
         if (n <= 0) return 1;
         if (!dynamicChunks) return Math.min(Math.max(threadCount, configuredChunks), n);
-        // Dynamic heuristic: at least 4 tasks per worker, but not excessively small chunks.
-        // Keeps overhead controlled while still allowing the scheduler to balance work.
+        // Heurística dinâmica: pelo menos 4 tarefas por worker, mas sem chunks excessivamente pequenos.
+        // Mantém o overhead sob controle enquanto ainda permite ao escalonador balancear a carga.
         int targetChunkSize = 4096;
         int bySize = (int) Math.ceil((double) n / targetChunkSize);
         int byThreads = threadCount * 4;

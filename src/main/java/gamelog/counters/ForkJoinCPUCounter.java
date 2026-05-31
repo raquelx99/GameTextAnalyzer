@@ -6,8 +6,8 @@ import java.util.concurrent.RecursiveTask;
 /**
  * Fork/Join counter - divide-and-conquer sobre o array de tokens.
  *
- * Supports both dynamic and fixed thresholds so the benchmark can evaluate how
- * task granularity affects performance.
+ * Suporta thresholds dinâmicos e fixos para que o benchmark possa avaliar como
+ * a granularidade das tarefas afeta o desempenho.
  */
 public class ForkJoinCPUCounter implements WordCounter {
 
@@ -17,12 +17,12 @@ public class ForkJoinCPUCounter implements WordCounter {
     private final boolean dynamicThreshold;
     private int lastThreshold;
 
-    /** Dynamic threshold: adapts to text size and available processors. */
+    /** Threshold dinâmico: adapta-se ao tamanho do texto e aos processadores disponíveis. */
     public ForkJoinCPUCounter() {
         this(Runtime.getRuntime().availableProcessors(), -1, true);
     }
 
-    /** Fixed threshold: useful for comparing manual granularities. */
+    /** Threshold fixo: útil para comparar granularidades manuais. */
     public ForkJoinCPUCounter(int threshold) {
         this(Runtime.getRuntime().availableProcessors(), threshold, false);
     }

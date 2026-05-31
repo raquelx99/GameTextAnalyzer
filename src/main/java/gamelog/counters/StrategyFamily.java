@@ -1,7 +1,7 @@
 package gamelog.counters;
 
 /**
- * Groups counting strategies by the kind of execution/paralellization used.
+ * Agrupa as estratégias de contagem pelo tipo de execução/paralelização utilizado.
  */
 public enum StrategyFamily {
     SERIAL("Serial"),

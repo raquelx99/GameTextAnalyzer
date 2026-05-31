@@ -3,8 +3,8 @@ package gamelog.counters;
 import java.util.Arrays;
 
 /**
- * Serial stream counter - uses Java Stream API without parallelism.
- * Useful to compare manual loops against higher-level Java abstractions.
+ * Contador stream serial - usa a Java Stream API sem paralelismo.
+ * Útil para comparar loops manuais com abstrações Java de nível mais alto.
  */
 public class SerialStreamCounter implements WordCounter {
     @Override

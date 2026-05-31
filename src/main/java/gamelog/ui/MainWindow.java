@@ -8,7 +8,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class MainWindow extends JFrame {
 
-    // Keep legacy constants so other panels compile without changes
+    // Mantém constantes legadas para que outros painéis compilem sem alterações
     static final Color BG_DARK    = Theme.BG_BASE;
     static final Color BG_PANEL   = Theme.BG_SURFACE;
     static final Color BG_CARD    = Theme.BG_CARD;
@@ -75,7 +75,7 @@ public class MainWindow extends JFrame {
         side.setBackground(Theme.BG_SURFACE);
         side.setPreferredSize(new Dimension(220, 0));
 
-        // ── Logo ─────────────────────────────────────────────────────────
+        // ── Logotipo ─────────────────────────────────────────────────────────
         JPanel logo = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -110,7 +110,7 @@ public class MainWindow extends JFrame {
         side.add(logo);
         side.add(Box.createVerticalStrut(8));
 
-        // ── Nav section: Main ─────────────────────────────────────────────
+        // ── Seção de navegação: Principal ─────────────────────────────────────────────
         side.add(navSection("PRINCIPAL"));
         side.add(navItem("home",       "⌂",  "Dashboard"));
         side.add(navItem("benchmark",  "▷",  "Benchmark"));
@@ -124,7 +124,7 @@ public class MainWindow extends JFrame {
 
         side.add(Box.createVerticalGlue());
 
-        // ── Footer ────────────────────────────────────────────────────────
+        // ── Rodapé ────────────────────────────────────────────────────────
         JPanel footer = new JPanel(new BorderLayout());
         footer.setBackground(Theme.BG_SURFACE);
         footer.setMaximumSize(new Dimension(220, 44));
@@ -160,10 +160,10 @@ public class MainWindow extends JFrame {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 boolean active = card.equals(currentCard);
                 if (active) {
-                    // Accent left bar
+                    // Barra de destaque à esquerda
                     g2.setColor(Theme.ACCENT);
                     g2.fillRoundRect(0, 6, 3, getHeight()-12, 3, 3);
-                    // Subtle highlight fill
+                    // Preenchimento de realce sutil
                     g2.setColor(new Color(Theme.ACCENT.getRed(), Theme.ACCENT.getGreen(),
                             Theme.ACCENT.getBlue(), 18));
                     g2.fillRoundRect(6, 2, getWidth()-8, getHeight()-4, 8, 8);
@@ -205,7 +205,7 @@ public class MainWindow extends JFrame {
         });
     }
 
-    // ── Legacy factory shims (other panels use these) ─────────────────────
+    // ── Adaptadores de fábrica legados (usados pelos outros painéis) ─────────────────────
 
     static JLabel sectionTitle(String text) { return Theme.h2(text); }
     static JLabel subLabel(String text)     { return Theme.muted(text); }

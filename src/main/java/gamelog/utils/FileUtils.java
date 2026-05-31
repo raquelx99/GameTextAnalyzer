@@ -9,23 +9,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Utility methods for reading text files.
+ * Métodos utilitários para leitura de arquivos de texto.
  *
- * The assignment samples are full literary texts, not one-event-per-line logs.
- * For this reason the official benchmark uses tokenization: each word becomes
- * one item in the returned array. The same tokenizer also works for the optional
- * synthetic gameplay logs because PLAYER_MOVE remains a single token.
+ * As amostras do trabalho são textos literários completos, não logs com um evento por linha.
+ * Por isso o benchmark oficial usa tokenização: cada palavra se torna
+ * um item no array retornado. O mesmo tokenizador também funciona para os logs
+ * sintéticos de gameplay opcionais, pois PLAYER_MOVE permanece como um único token.
  */
 public class FileUtils {
 
     /**
-     * Reads a text file and returns normalized word tokens.
+     * Lê um arquivo de texto e retorna tokens de palavras normalizados.
      *
-     * Normalization applied:
-     *  - lowercase;
-     *  - punctuation becomes spaces;
-     *  - underscores are preserved for synthetic gameplay events;
-     *  - accents are removed to make searches easier in Portuguese/Spanish text.
+     * Normalização aplicada:
+     *  - letras minúsculas;
+     *  - pontuação é convertida em espaços;
+     *  - underscores são preservados para eventos sintéticos de gameplay;
+     *  - acentos são removidos para facilitar buscas em texto português/espanhol.
      */
     public static String[] readLines(String path) throws IOException {
         return readTokens(path);
@@ -50,8 +50,8 @@ public class FileUtils {
     }
 
     /**
-     * Streams tokens with lower memory overhead. Currently not used by counters,
-     * but useful for future improvements.
+     * Fluxo de tokens com menor overhead de memória. Atualmente não é usado pelos contadores,
+     * mas útil para melhorias futuras.
      */
     public static List<String> readTokenList(String path) throws IOException {
         String[] tokens = readTokens(path);
@@ -60,7 +60,7 @@ public class FileUtils {
         return list;
     }
 
-    /** Normalizes a query word with the same rules used for file tokens. */
+    /** Normaliza uma palavra de query com as mesmas regras usadas para tokens de arquivo. */
     public static String normalizeQuery(String query) {
         String[] tokens = tokenize(query == null ? "" : query);
         return tokens.length == 0 ? "" : tokens[0];

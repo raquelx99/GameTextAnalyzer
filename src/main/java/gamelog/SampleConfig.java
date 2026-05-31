@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Central configuration for the official text samples required by the assignment.
+ * Configuração central das amostras de texto oficiais exigidas pelo trabalho.
  *
- * The official benchmark uses these literary samples as "narrative worlds"
- * for a game-adaptation analysis.
+ * O benchmark oficial usa essas amostras literárias como "mundos narrativos"
+ * para a análise de adaptação de jogos.
  */
 public final class SampleConfig {
 

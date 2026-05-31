@@ -4,17 +4,17 @@ import java.io.*;
 import java.util.List;
 
 /**
- * Writes benchmark results to a CSV file for later analysis/charting.
+ * Grava resultados de benchmark em um arquivo CSV para análise e geração de gráficos posterior.
  */
 public class CsvWriter {
 
     /**
-     * Appends (or creates) a CSV file with the provided results.
+     * Acrescenta (ou cria) um arquivo CSV com os resultados fornecidos.
      *
-     * @param outputPath path to the CSV file
-     * @param results    list of results to write
-     * @param append     if {@code true}, appends to an existing file
-     * @throws IOException if the file cannot be written
+     * @param outputPath caminho para o arquivo CSV
+     * @param results    lista de resultados a gravar
+     * @param append     se {@code true}, acrescenta a um arquivo existente
+     * @throws IOException se o arquivo não puder ser gravado
      */
     public static void write(String outputPath, List<BenchmarkResult> results, boolean append)
             throws IOException {

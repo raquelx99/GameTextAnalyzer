@@ -4,14 +4,14 @@ import org.jocl.*;
 import static org.jocl.CL.*;
 
 /**
- * Parallel GPU counter via OpenCL (JOCL 2.0.4).
+ * Contador GPU paralelo via OpenCL (JOCL 2.0.4).
  *
  * Fallback: se JOCL não estiver disponível ou não houver dispositivo OpenCL,
  * usa parallel stream automaticamente e registra o motivo.
  */
 public class ParallelGPUCounter implements WordCounter {
 
-    /** Kernel OpenCL: cada work-item verifica uma linha contra a palavra-alvo. */
+    /** Kernel OpenCL: cada work-item verifica uma linha em relação à palavra-alvo. */
     private static final String KERNEL_SRC =
         "__kernel void countWords(\n"                                    +
         "    __global const char* text,\n"                              +
@@ -39,7 +39,7 @@ public class ParallelGPUCounter implements WordCounter {
     private cl_command_queue queue;
     private cl_program    program;
     private cl_kernel     kernel;
-    private boolean       gpuDevice; // true = GPU real, false = CPU OpenCL
+    private boolean       gpuDevice; // true = GPU real, false = CPU via OpenCL
     private double        lastPreparationMs;
     private double        lastKernelMs;
 

@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reads benchmark results from an existing CSV file.
- * Supports both the current modular format and the previous CSV layout.
+ * Lê resultados de benchmark de um arquivo CSV existente.
+ * Suporta tanto o formato modular atual quanto o layout CSV anterior.
  */
 public class CsvReader {
 
@@ -71,7 +71,7 @@ public class CsvReader {
                         list.add(r);
                     }
                 } catch (RuntimeException ignored) {
-                    // skip malformed rows
+                    // ignora linhas malformadas
                 }
             }
         }

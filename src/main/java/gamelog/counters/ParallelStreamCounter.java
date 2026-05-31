@@ -3,8 +3,8 @@ package gamelog.counters;
 import java.util.Arrays;
 
 /**
- * Uses Java's parallel Stream API, which runs over the common ForkJoinPool.
- * This is useful as a high-level parallel baseline against manual chunking.
+ * Usa a API de parallel Stream do Java, que executa sobre o ForkJoinPool comum.
+ * Útil como baseline paralelo de alto nível em comparação com chunking manual.
  */
 public class ParallelStreamCounter implements WordCounter {
     @Override

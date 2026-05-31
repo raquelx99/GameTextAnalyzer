@@ -1,48 +1,48 @@
 package gamelog.counters;
 
 /**
- * Common interface for all word-counting benchmark strategies.
+ * Interface comum para todas as estratégias de benchmark de contagem de palavras.
  *
- * New strategies only need to implement this interface and be registered in
- * {@link StrategyRegistry}. The benchmark runner, CSV writer and chart system
- * will then treat them in the same way as the existing methods.
+ * Novas estratégias precisam apenas implementar esta interface e ser registradas em
+ * {@link StrategyRegistry}. O benchmark runner, o CSV writer e o sistema de gráficos
+ * irão tratá-las da mesma forma que os métodos existentes.
  */
 public interface WordCounter {
 
-    /** Counts occurrences of {@code word} in the normalized token array. */
+    /** Conta as ocorrências de {@code word} no array de tokens normalizado. */
     long count(String[] lines, String word);
 
-    /** Human-readable name for this counter (used in reports). */
+    /** Nome legível para este contador (usado nos relatórios). */
     String getName();
 
-    /** Stable ID used in CSV/filters. */
+    /** ID estável usado nos filtros do CSV. */
     default String getId() {
         return getName().toLowerCase()
                 .replaceAll("[^a-z0-9]+", "_")
                 .replaceAll("^_+|_+$", "");
     }
 
-    /** Family of the strategy, used to generate per-branch charts. */
+    /** Família da estratégia, usada para gerar gráficos por categoria. */
     default StrategyFamily getFamily() {
         return StrategyFamily.SERIAL;
     }
 
-    /** Number of workers/threads/chunks represented by this strategy. */
+    /** Número de workers/threads/chunks representados por esta estratégia. */
     default int getParallelism() {
         return 1;
     }
 
-    /** True only when a GPU strategy actually ran on GPU/OpenCL, not fallback. */
+    /** Verdadeiro apenas quando uma estratégia GPU executou de fato na GPU/OpenCL, sem fallback. */
     default boolean isRealGpu() {
         return false;
     }
 
-    /** Optional: time spent preparing data before the actual count/GPU kernel. */
+    /** Opcional: tempo gasto preparando os dados antes da contagem/kernel GPU. */
     default double getLastPreparationMs() {
         return 0.0;
     }
 
-    /** Optional: time spent in the core computation/kernel phase. */
+    /** Opcional: tempo gasto na fase principal de computação/kernel. */
     default double getLastKernelMs() {
         return 0.0;
     }

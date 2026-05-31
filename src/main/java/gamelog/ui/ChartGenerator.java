@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ChartGenerator - 10 gráficos curados, organizados em 4 blocos
+ * ChartGenerator - 14 gráficos curados, organizados em 6 blocos
  * alinhados com os requisitos do trabalho.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -24,37 +24,66 @@ import java.util.stream.Collectors;
  *                                      SerialCPU. Quanto mais rápido que o
  *                                      baseline? Responde diretamente o enunciado.
  *
- *  BLOCO 2 - IMPACTO DO NÚMERO DE NÚCLEOS (exigência explícita do trabalho)
+ *  BLOCO 2 — IMPACTO DO NÚMERO DE NÚCLEOS (exigência explícita do trabalho)
  *   3. chart_03_threads_tempo        — tempo mediano do ParallelCPU de 1 a N
  *                                      threads: gráfico de linha, uma curva por texto.
  *   4. chart_04_threads_speedup      — speedup do ParallelCPU por nº de threads.
- *                                      Mostra onde o ganho para de crescer.
+ *                                      Mostra onde o ganho cresce, estabiliza
+ *                                      ou deixa de compensar.
  *   5. chart_05_amdahl_efficiency    — eficiência paralela (speedup / threads).
- *                                      Revela overhead e lei de Amdahl.
+ *                                      Revela overhead, perda de eficiência
+ *                                      e relação com a Lei de Amdahl.
  *
- *  BLOCO 3 - IMPACTO DO TAMANHO DO TEXTO (exigência explícita do trabalho)
- *   6. chart_06_escala_tamanho       — eixo X = tamanho do texto (palavras),
+ *  BLOCO 3 — IMPACTO DO TAMANHO DO TEXTO (exigência explícita do trabalho)
+ *   6. chart_06_escala_tamanho       — eixo X = tamanho do texto em palavras,
  *                                      eixo Y = tempo mediano. Uma linha por método.
- *                                      Mostra escalabilidade.
+ *                                      Mostra a escalabilidade das estratégias.
  *   7. chart_07_tempo_normalizado    — tempo / 100 mil palavras. Remove o viés de
  *                                      tamanho: compara a "velocidade" real de cada
  *                                      método independente do volume.
  *
- *  BLOCO 4 - ESTABILIDADE E VARIABILIDADE (3 amostras, exigência explícita do trabalho)
+ *  BLOCO 4 — ESTABILIDADE E VARIABILIDADE (3 amostras, exigência explícita do trabalho)
  *   8. chart_08_tres_execucoes       — tempo das 3 execuções individuais de cada
  *                                      método, por obra. Mostra reprodutibilidade.
  *   9. chart_09_media_desvio         — média ± desvio padrão das 3 execuções.
  *                                      Análise estatística pedida explicitamente.
- *  10. chart_10_gpu_vs_cpu           — GPU vs melhor CPU paralela vs Serial.
- *                                      Gráfico de destaque para a discussão GPU,
- *                                      que é o método mais complexo do trabalho.
+ *
+ *  BLOCO 5 — ANÁLISE DA GPU (método mais complexo do trabalho)
+ *  10. chart_10_gpu_vs_cpu           — GPU String e GPU Hash vs melhor CPU paralela
+ *                                      vs SerialCPU. Mostra se a GPU compensa ou não
+ *                                      em relação às melhores estratégias em CPU.
+ *  13. chart_13_gpu_prep_kernel      — decomposição do tempo da GPU: preparação dos
+ *                                      dados, execução/leitura do kernel e tempo total.
+ *                                      Ajuda a explicar o overhead da GPU.
+ *
+ *  BLOCO 6 — GRANULARIDADE E ESTRATÉGIAS MODULARES (enriquecimento do benchmark)
+ *  11. chart_11_chunks               — granularidade de chunks no ParallelCPU.
+ *                                      Compara chunks fixos e dinâmicos para observar
+ *                                      impacto da divisão do trabalho.
+ *  12. chart_12_forkjoin_thresholds  — granularidade do ForkJoin por thresholds.
+ *                                      Compara thresholds fixos e dinâmicos, mostrando
+ *                                      como a quantidade de tarefas afeta o desempenho.
+ *  14. chart_14_best_method_summary  — resumo do melhor método por amostra.
+ *                                      Mostra o vencedor de cada obra, tempo mediano,
+ *                                      speedup e família da estratégia. Útil para a
+ *                                      conclusão do relatório.
  * ─────────────────────────────────────────────────────────────────────────────
  *
+ * Funcionalidades adicionais:
+ *  – Filtro por amostra nos gráficos:
+ *      Todas as amostras, Don Quixote, Dracula ou Moby Dick.
+ *
+ *  – Estratégias modulares:
+ *      SerialCPU, ParallelCPU, ParallelStream, ForkJoin, Virtual Threads,
+ *      GPU String e GPU Hash podem ser analisadas individualmente ou em conjunto.
+ *
  * Regras de legibilidade aplicadas:
- *  – Máximo 6 séries por gráfico de barras agrupadas.
+ *  – Máximo 6 séries principais por gráfico de barras agrupadas.
  *  – Gráficos de linha usados apenas para tendências (threads, tamanho).
  *  – Cada gráfico tem subtítulo que explica como interpretá-lo.
- *  – Cores consistentes: SerialCPU sempre azul, GPU sempre vermelho, etc.
+ *  – Cores consistentes: SerialCPU, CPU paralela, ForkJoin, ParallelStream,
+ *    Virtual Threads e GPU mantêm identidade visual própria.
+ *  – GPU String e GPU Hash são diferenciadas explicitamente.
  */
 public class ChartGenerator {
 
@@ -82,7 +111,7 @@ public class ChartGenerator {
     private static final Color C_VT      = new Color(0xB07BF5);
     private static final Color C_GPU     = new Color(0xFF6B6B);
 
-    // ── Entrada pública ───────────────────────────────────────────────────
+    // ── Entrada  ───────────────────────────────────────────────────
 
     public static void generateAll(List<BenchmarkResult> results, String outputDir)
             throws IOException {
@@ -137,7 +166,6 @@ public class ChartGenerator {
     /**
      * 2. Speedup de cada método relativo ao SerialCPU.
      * Speedup = tempo_serial / tempo_método. Valor > 1 = mais rápido que serial.
-     * Responde diretamente: "quanto cada método ganhou?"
      */
     private static BufferedImage chart02_SpeedupVsSerial(List<BenchmarkResult> r) {
         List<String> methods = repMethods(r);

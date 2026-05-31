@@ -4,15 +4,15 @@ import org.jocl.*;
 import static org.jocl.CL.*;
 
 /**
- * GPU/OpenCL counter using integer hashes instead of string/byte comparison.
+ * Contador GPU/OpenCL usando hashes inteiros em vez de comparação de strings/bytes.
  *
- * It keeps the original string-based GPU strategy for comparison, but this
- * variant sends int hashes + token lengths to the device. This is much closer
- * to what GPUs handle efficiently: flat numeric arrays.
+ * Mantém a estratégia GPU original baseada em string para comparação, mas esta
+ * variante envia hashes int + comprimentos de token para o dispositivo. Isso é muito mais
+ * próximo do que as GPUs processam com eficiência: arrays numéricos planos.
  *
- * Note: hash + length collisions are theoretically possible. For the official
- * samples this is acceptable as an experimental benchmark variant, and the
- * original exact string strategy remains available for correctness comparison.
+ * Nota: colisões de hash + comprimento são teoricamente possíveis. Para as amostras
+ * oficiais, isso é aceitável como variante experimental de benchmark, e a
+ * estratégia exata de string original permanece disponível para comparação de exatidão.
  */
 public class ParallelGPUHashCounter implements WordCounter {
 

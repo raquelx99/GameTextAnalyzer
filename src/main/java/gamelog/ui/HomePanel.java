@@ -21,7 +21,7 @@ public class HomePanel extends JPanel {
         scroll.setLayout(new BoxLayout(scroll, BoxLayout.Y_AXIS));
         scroll.setBorder(BorderFactory.createEmptyBorder(32, 36, 32, 36));
 
-        // ── Hero ──────────────────────────────────────────────────────────
+        // ── Herói ──────────────────────────────────────────────────────────
         JPanel hero = new JPanel(new BorderLayout(0, 6));
         hero.setBackground(Theme.BG_BASE);
         hero.setAlignmentX(LEFT_ALIGNMENT);
@@ -36,7 +36,7 @@ public class HomePanel extends JPanel {
         scroll.add(hero);
         scroll.add(Box.createVerticalStrut(28));
 
-        // ── KPI row ───────────────────────────────────────────────────────
+        // ── Linha de KPIs ───────────────────────────────────────────────────────
         JPanel kpiRow = new JPanel(new GridLayout(1, 4, 14, 0));
         kpiRow.setBackground(Theme.BG_BASE);
         kpiRow.setAlignmentX(LEFT_ALIGNMENT);
@@ -56,7 +56,7 @@ public class HomePanel extends JPanel {
         scroll.add(kpiRow);
         scroll.add(Box.createVerticalStrut(28));
 
-        // ── Quick actions row ─────────────────────────────────────────────
+        // ── Linha de ações rápidas ─────────────────────────────────────────────
         JLabel actTitle = Theme.h3("Acesso rápido");
         actTitle.setAlignmentX(LEFT_ALIGNMENT);
         scroll.add(actTitle);
@@ -74,7 +74,7 @@ public class HomePanel extends JPanel {
         scroll.add(actions);
         scroll.add(Box.createVerticalStrut(28));
 
-        // ── About card ────────────────────────────────────────────────────
+        // ── Card "Sobre" ────────────────────────────────────────────────────
         JPanel about = Theme.card(new BorderLayout(0, 10));
         about.setBorder(BorderFactory.createCompoundBorder(about.getBorder(),
                 BorderFactory.createEmptyBorder(18, 20, 18, 20)));
@@ -168,7 +168,7 @@ public class HomePanel extends JPanel {
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.setColor(Theme.DIVIDER_LT);
                 g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 12, 12);
-                // subtle top accent line
+                // linha de destaque sutil no topo
                 g2.setColor(accent);
                 g2.fillRoundRect(14, 0, 40, 3, 3, 3);
                 g2.dispose();

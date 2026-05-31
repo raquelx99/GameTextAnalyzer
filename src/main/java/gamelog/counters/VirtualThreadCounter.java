@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Virtual-thread counter - divides the token array into chunks and runs each
- * chunk in a Java 21 virtual thread.
+ * Contador de virtual threads - divide o array de tokens em chunks e executa cada
+ * chunk em uma virtual thread do Java 21.
  *
- * This is intentionally included as an experiment: virtual threads are often
- * excellent for blocking I/O workloads, but this project helps verify whether
- * they are beneficial for CPU-bound word counting.
+ * Incluído intencionalmente como experimento: virtual threads costumam ser
+ * excelentes para workloads de I/O bloqueante, mas este projeto ajuda a verificar
+ * se elas são benéficas para a contagem de palavras CPU-bound.
  */
 public class VirtualThreadCounter implements WordCounter {
 
@@ -49,9 +49,9 @@ public class VirtualThreadCounter implements WordCounter {
             return total;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while counting with virtual threads", e);
+            throw new RuntimeException("Interrompido durante a contagem com virtual threads", e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Error in virtual-thread count", e);
+            throw new RuntimeException("Erro na contagem com virtual threads", e);
         }
     }
 

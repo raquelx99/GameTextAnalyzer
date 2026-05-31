@@ -7,35 +7,35 @@ import java.awt.event.*;
 import java.awt.geom.*;
 
 /**
- * Centralised design system for GameText Analyzer.
- * All colours, fonts, spacing and component factories live here.
+ * Sistema de design centralizado do GameText Analyzer.
+ * Todas as cores, fontes, espaçamentos e fábricas de componentes ficam aqui.
  */
 public final class Theme {
 
     private Theme() {}
 
-    // ── Colour tokens ────────────────────────────────────────────────────────
-    public static final Color BG_BASE    = new Color(0x0F0F17);   // deepest bg
-    public static final Color BG_SURFACE = new Color(0x171724);   // panels, sidebar
+    // ── Tokens de cor ────────────────────────────────────────────────────────
+    public static final Color BG_BASE    = new Color(0x0F0F17);   // fundo mais escuro
+    public static final Color BG_SURFACE = new Color(0x171724);   // painéis, sidebar
     public static final Color BG_CARD    = new Color(0x1E1E30);   // cards, inputs
-    public static final Color BG_HOVER   = new Color(0x252538);   // hover state
-    public static final Color BG_ACTIVE  = new Color(0x2A2A42);   // selected state
+    public static final Color BG_HOVER   = new Color(0x252538);   // estado hover
+    public static final Color BG_ACTIVE  = new Color(0x2A2A42);   // estado selecionado
 
-    public static final Color ACCENT     = new Color(0x6C8EF5);   // primary blue
-    public static final Color ACCENT_DIM = new Color(0x4A6ACF);   // darker blue
-    public static final Color GREEN      = new Color(0x4EC994);   // success
-    public static final Color ORANGE     = new Color(0xF5A623);   // warning/generate
-    public static final Color RED        = new Color(0xE5534B);   // error/danger
+    public static final Color ACCENT     = new Color(0x6C8EF5);   // azul primário
+    public static final Color ACCENT_DIM = new Color(0x4A6ACF);   // azul mais escuro
+    public static final Color GREEN      = new Color(0x4EC994);   // sucesso
+    public static final Color ORANGE     = new Color(0xF5A623);   // aviso/gerar
+    public static final Color RED        = new Color(0xE5534B);   // erro/perigo
     public static final Color PURPLE     = new Color(0xB07BF5);   // GPU
 
-    public static final Color TEXT_PRI   = new Color(0xEDEDF5);   // primary text
-    public static final Color TEXT_SEC   = new Color(0x9898B8);   // secondary text
-    public static final Color TEXT_MUTED = new Color(0x5A5A7A);   // muted/disabled
+    public static final Color TEXT_PRI   = new Color(0xEDEDF5);   // texto primário
+    public static final Color TEXT_SEC   = new Color(0x9898B8);   // texto secundário
+    public static final Color TEXT_MUTED = new Color(0x5A5A7A);   // texto opaco/desativado
 
-    public static final Color DIVIDER    = new Color(0x252535);   // borders/dividers
-    public static final Color DIVIDER_LT = new Color(0x32324A);   // lighter border
+    public static final Color DIVIDER    = new Color(0x252535);   // bordas/divisores
+    public static final Color DIVIDER_LT = new Color(0x32324A);   // borda mais clara
 
-    // ── Method colours (consistent across all panels) ─────────────────────
+    // ── Cores dos métodos (consistentes em todos os painéis) ─────────────────────
     public static Color methodColor(String method) {
         if (method == null) return TEXT_SEC;
         if (method.equals("SerialCPU"))                return new Color(0x6C8EF5);
@@ -46,7 +46,7 @@ public final class Theme {
         return TEXT_SEC;
     }
 
-    // ── Typography ───────────────────────────────────────────────────────────
+    // ── Tipografia ───────────────────────────────────────────────────────────
     public static final Font FONT_TITLE   = new Font("SansSerif", Font.BOLD,  22);
     public static final Font FONT_H2      = new Font("SansSerif", Font.BOLD,  16);
     public static final Font FONT_H3      = new Font("SansSerif", Font.BOLD,  13);
@@ -55,13 +55,13 @@ public final class Theme {
     public static final Font FONT_MONO    = new Font(Font.MONOSPACED, Font.PLAIN, 12);
     public static final Font FONT_MONO_SM = new Font(Font.MONOSPACED, Font.PLAIN, 11);
 
-    // ── Spacing ──────────────────────────────────────────────────────────────
+    // ── Espaçamento ──────────────────────────────────────────────────────────
     public static final int PAD_SM  = 8;
     public static final int PAD_MD  = 16;
     public static final int PAD_LG  = 24;
     public static final int PAD_XL  = 32;
 
-    // ── UIManager bootstrap ──────────────────────────────────────────────────
+    // ── Inicialização do UIManager ──────────────────────────────────────────────────
     public static void apply() {
         UIManager.put("Panel.background",            BG_BASE);
         UIManager.put("Label.foreground",            TEXT_PRI);
@@ -101,9 +101,9 @@ public final class Theme {
         UIManager.put("ScrollBar.thumbColor",        new Color(0x3A3A5C));
     }
 
-    // ── Component factories ──────────────────────────────────────────────────
+    // ── Fábricas de componentes ──────────────────────────────────────────────
 
-    /** Flat primary action button with rounded corners. */
+    /** Botão primário plano com cantos arredondados. */
     public static JButton primaryBtn(String text) {
         JButton btn = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
@@ -128,7 +128,7 @@ public final class Theme {
         return btn;
     }
 
-    /** Ghost / secondary button. */
+    /** Botão ghost / secundário. */
     public static JButton ghostBtn(String text) {
         JButton btn = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
@@ -155,17 +155,17 @@ public final class Theme {
         return btn;
     }
 
-    /** Danger/action button (red tint). */
+    /** Botão de ação perigosa (tom vermelho). */
     public static JButton dangerBtn(String text) {
         JButton btn = primaryBtn(text);
         btn.setForeground(Color.WHITE);
-        btn.addMouseListener(new MouseAdapter() {}); // trigger repaint
-        // Override paint by replacing with red palette
+        btn.addMouseListener(new MouseAdapter() {}); // aciona repaint
+        // Sobrescreve a pintura usando a paleta vermelha
         btn.putClientProperty("dangerBtn", true);
         return btn;
     }
 
-    /** Styled card panel with rounded border. */
+    /** Painel card estilizado com borda arredondada. */
     public static JPanel card() {
         return new JPanel() {
             { setOpaque(false); setLayout(new BorderLayout()); }
@@ -187,7 +187,7 @@ public final class Theme {
         return p;
     }
 
-    /** Input field with rounded border. */
+    /** Campo de input com borda arredondada. */
     public static JTextField inputField(String placeholder) {
         JTextField tf = new JTextField(placeholder) {
             @Override protected void paintBorder(Graphics g) {
@@ -207,7 +207,7 @@ public final class Theme {
         return tf;
     }
 
-    /** Styled combo box. */
+    /** Combo box estilizado. */
     public static JComboBox<String> comboBox() {
         JComboBox<String> cb = new JComboBox<>();
         cb.setBackground(BG_CARD);
@@ -217,7 +217,7 @@ public final class Theme {
         return cb;
     }
 
-    /** Small coloured pill / badge label. */
+    /** Rótulo pequeno colorido no estilo badge/pílula. */
     public static JLabel badge(String text, Color bg) {
         JLabel lbl = new JLabel(text) {
             @Override protected void paintComponent(Graphics g) {
@@ -239,7 +239,7 @@ public final class Theme {
         return lbl;
     }
 
-    /** Section header label. */
+    /** Rótulo de cabeçalho de seção. */
     public static JLabel h2(String text) {
         JLabel l = new JLabel(text);
         l.setFont(FONT_H2);
@@ -247,7 +247,7 @@ public final class Theme {
         return l;
     }
 
-    /** Sub-heading label. */
+    /** Rótulo de subseção. */
     public static JLabel h3(String text) {
         JLabel l = new JLabel(text);
         l.setFont(FONT_H3);
@@ -255,7 +255,7 @@ public final class Theme {
         return l;
     }
 
-    /** Muted body label. */
+    /** Rótulo de corpo em tom opaco. */
     public static JLabel muted(String text) {
         JLabel l = new JLabel(text);
         l.setFont(FONT_BODY);
@@ -263,7 +263,7 @@ public final class Theme {
         return l;
     }
 
-    /** Thin horizontal divider. */
+    /** Divisor horizontal fino. */
     public static JSeparator divider() {
         JSeparator sep = new JSeparator();
         sep.setForeground(DIVIDER);
@@ -272,7 +272,7 @@ public final class Theme {
         return sep;
     }
 
-    /** Terminal-style log text area. */
+    /** Área de texto no estilo terminal/log. */
     public static JTextArea terminal() {
         JTextArea ta = new JTextArea();
         ta.setEditable(false);
@@ -285,7 +285,7 @@ public final class Theme {
         return ta;
     }
 
-    /** Thin accent progress bar. */
+    /** Barra de progresso fina com cor de destaque. */
     public static JProgressBar progressBar() {
         JProgressBar pb = new JProgressBar() {
             @Override protected void paintComponent(Graphics g) {
