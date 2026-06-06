@@ -50,8 +50,7 @@ public class ParallelGPUHashReductionCounter implements WordCounter {
             "    }\n" +
             "    if (lid == 0) partials[group] = localSums[0];\n" +
             "}\n";
-
-    // testar quebrar por linha
+    
     private boolean fallbackMode;
     private boolean gpuDevice;
     private cl_context context;

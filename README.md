@@ -1,39 +1,74 @@
 # 🎮 GameText Analyzer
-### Análise Comparativa de Algoritmos com Uso de Paralelismo em Textos Literários para Jogos Narrativos
+### Benchmark modular de estratégias de paralelização aplicado à busca de palavras em textos literários
 
 ---
 
 ## Resumo
 
-O **GameText Analyzer** é uma ferramenta Java para fazer benchmark modular de estratégias de busca/contagem de palavras em arquivos `.txt`. Além das abordagens base **SerialCPU**, **ParallelCPU** e **ParallelGPU/OpenCL**, a versão atual inclui estratégias adicionais para enriquecer a comparação: **SerialStream**, **ParallelStream**, **ForkJoinCPU** e **VirtualThreads**. A versão final do projeto utiliza obrigatoriamente as amostras fornecidas na atividade: **Don Quixote**, **Dracula** e **Moby Dick**.
+O **GameText Analyzer** é uma aplicação em Java desenvolvida para comparar o desempenho de diferentes estratégias de busca/contagem de palavras em arquivos `.txt`. O trabalho utiliza as amostras obrigatórias fornecidas na atividade — **Don Quixote**, **Dracula** e **Moby Dick** — e executa benchmarks entre métodos seriais, paralelos em CPU e paralelos em GPU/OpenCL.
 
-Para manter a proposta relacionada a jogos digitais, cada obra foi interpretada como um **mundo narrativo** que poderia servir de base para uma adaptação em jogo: *Don Quixote* como um RPG de cavalaria, *Dracula* como um survival horror gótico e *Moby Dick* como uma aventura naval/boss hunt. A contagem de palavras representa uma análise simples de recorrência de elementos narrativos importantes, enquanto os métodos seriais e paralelos são comparados em desempenho.
+Para manter uma conexão com jogos digitais, as obras foram interpretadas como **mundos narrativos** que poderiam servir de base para adaptações em jogos:
+
+| Obra | Interpretação gamificada | Palavra-tema analisada |
+|---|---|---|
+| **Don Quixote** | RPG de Cavalaria e Aventura | `quijote` |
+| **Dracula** | Survival Horror Gótico | `blood` |
+| **Moby Dick** | Aventura Naval / Boss Hunt | `whale` |
+
+A partir dessas amostras, o projeto compara abordagens como `SerialCPU`, `ParallelCPU`, `ParallelStream`, `ForkJoin`, `Virtual Threads`, `GPU String` e `GPU Hash`. Os resultados são registrados em CSV e visualizados em gráficos, permitindo analisar tempo de execução, speedup, eficiência paralela, impacto do número de threads, granularidade dos chunks, thresholds do ForkJoin e overhead da GPU.
 
 ---
 
 ## Introdução
 
-Jogos narrativos frequentemente se inspiram em obras literárias para criar mundos, personagens, missões, atmosferas e conflitos. Antes de adaptar uma obra para um jogo, uma equipe poderia analisar termos recorrentes para entender quais elementos aparecem com mais força no texto.
+A busca por eficiência computacional é essencial em aplicações que processam grandes volumes de dados. Em jogos digitais, textos e logs podem ser analisados para identificar padrões narrativos, frequência de eventos, recorrência de personagens, elementos de mundo e temas centrais. Neste trabalho, essa ideia foi adaptada para as amostras obrigatórias, interpretando cada obra literária como um possível universo de jogo.
 
-Neste trabalho, essa análise textual é usada como contexto para o benchmark de paralelismo. O objetivo técnico continua sendo comparar diferentes formas de contar palavras em arquivos de texto, mas a interpretação dos dados foi gamificada.
+O objetivo técnico é comparar diferentes formas de realizar a mesma tarefa: **contar a ocorrência de uma palavra em um texto**. A tarefa é simples o suficiente para permitir comparação clara entre métodos, mas também interessante para observar quando o paralelismo compensa ou quando o overhead de paralelização prejudica o desempenho.
 
-### Estratégias escolhidas
+A aplicação foi estruturada como um **framework modular de benchmark**. Todas as estratégias implementam uma interface comum (`WordCounter`) e são registradas em `StrategyRegistry`. Dessa forma, novos métodos podem ser adicionados sem alterar a lógica principal do benchmark, do CSV ou da geração de gráficos.
 
-A aplicação foi refatorada para funcionar como um **framework modular de benchmark**. Todas as estratégias implementam a interface `WordCounter` e são registradas em `StrategyRegistry`, permitindo adicionar novos métodos sem reescrever o benchmark, o CSV ou os gráficos.
+---
 
-| Família | Método | Descrição |
-|---|---|---|
-| Serial | `SerialCPU` | Percorre todas as palavras sequencialmente usando um loop simples. |
-| Serial | `SerialStream` | Usa `Arrays.stream(...)` em modo sequencial, servindo para comparar loop manual com Stream API. |
-| CPU paralela | `ParallelCPU-2t` | Divide o vetor de palavras entre 2 platform threads usando `ExecutorService`. |
-| CPU paralela | `ParallelCPU-4t` | Divide o vetor de palavras entre 4 platform threads usando `ExecutorService`. |
-| CPU paralela | `ParallelCPU-8t` | Divide o vetor de palavras entre 8 platform threads usando `ExecutorService`. |
-| CPU paralela | `ParallelCPU-Nt` | Usa a quantidade de processadores disponíveis na máquina. |
-| CPU paralela | `ForkJoinCPU` | Usa `ForkJoinPool` e divisão recursiva do vetor em subtarefas. |
-| Stream paralela | `ParallelStream` | Usa `Arrays.stream(...).parallel()`, executando sobre o ForkJoinPool comum. |
-| Virtual threads | `VirtualThreads-50chunks` | Divide o vetor em 50 partes e executa cada parte em uma virtual thread. |
-| Virtual threads | `VirtualThreads-100chunks` | Testa uma granularidade maior, com 100 chunks em virtual threads. |
-| GPU/OpenCL | `ParallelGPU` | Tenta executar a comparação na GPU com OpenCL/JOCL. Se JOCL/OpenCL não estiver disponível, usa fallback em CPU identificado como `ParallelGPU-FallbackCPU`. |
+## Métodos implementados
+
+### Estratégias seriais
+
+| Método | Descrição |
+|---|---|
+| `SerialCPU` | Percorre o vetor de palavras com um loop simples. É o baseline principal. |
+| `SerialStream` | Usa `Arrays.stream(...)` em modo sequencial, permitindo comparar loop manual com Stream API. |
+
+### Estratégias paralelas em CPU
+
+| Método | Descrição |
+|---|---|
+| `ParallelCPU-2t` | Divide o vetor entre 2 threads tradicionais. |
+| `ParallelCPU-4t` | Divide o vetor entre 4 threads tradicionais. |
+| `ParallelCPU-8t` | Divide o vetor entre 8 threads tradicionais. |
+| `ParallelCPU-Nt` | Usa `Runtime.getRuntime().availableProcessors()` para definir o número de threads dinamicamente. |
+| `ParallelCPU-8t-32chunks` | Usa 8 threads e 32 chunks fixos para testar granularidade. |
+| `ParallelCPU-8t-128chunks` | Usa 8 threads e 128 chunks fixos. |
+| `ParallelCPU-8t-dynChunks` | Calcula dinamicamente a quantidade de chunks de acordo com o tamanho do texto. |
+
+### Estratégias com ForkJoin, Stream paralela e Virtual Threads
+
+| Método | Descrição |
+|---|---|
+| `ForkJoinCPU-th2000` | Usa ForkJoin com threshold fixo de 2.000 palavras. |
+| `ForkJoinCPU-th10000` | Usa ForkJoin com threshold fixo de 10.000 palavras. |
+| `ForkJoinCPU-dyn` | Calcula threshold dinâmico conforme o tamanho da entrada. |
+| `ParallelStream` | Usa `Arrays.stream(...).parallel()`, baseado no ForkJoinPool comum da JVM. |
+| `VirtualThreads-50chunks` | Divide o trabalho em 50 chunks executados por virtual threads. |
+| `VirtualThreads-100chunks` | Testa granularidade maior com 100 chunks. |
+
+### Estratégias em GPU/OpenCL
+
+| Método | Descrição |
+|---|---|
+| `ParallelGPU-String` | Envia o texto como bytes, offsets e tamanhos, e compara a palavra caractere por caractere no kernel OpenCL. |
+| `ParallelGPU-Hash` | Converte cada palavra para `hashCode + length`, tornando a comparação na GPU uma operação numérica mais simples. |
+
+A versão `ParallelGPU-String` foi mantida por ser mais próxima da comparação textual exata. A versão `ParallelGPU-Hash` foi adicionada como otimização experimental, reduzindo a complexidade da comparação no kernel. Como hashes podem ter colisões teóricas, o tamanho da palavra também é comparado para reduzir o risco de falso positivo.
 
 ---
 
@@ -41,175 +76,187 @@ A aplicação foi refatorada para funcionar como um **framework modular de bench
 
 ### Amostras obrigatórias
 
-As amostras oficiais ficam em:
+As amostras oficiais utilizadas no benchmark ficam em:
 
 ```text
 data/samples/
 ```
 
-| Arquivo | Obra | Interpretação gamificada | Palavra padrão |
+| Arquivo | Obra | Mundo narrativo | Palavra buscada |
 |---|---|---|---|
 | `DonQuixote-388208.txt` | Don Quixote | RPG de Cavalaria e Aventura | `quijote` |
 | `Dracula-165307.txt` | Dracula | Survival Horror Gótico | `blood` |
 | `MobyDick-217452.txt` | Moby Dick | Aventura Naval / Boss Hunt | `whale` |
 
-Também foram adicionadas sugestões de palavras por obra:
+Essas obras atendem aos requisitos de variar o **tamanho** e a **natureza** das entradas: são textos literários diferentes, com volumes diferentes e temáticas distintas.
 
-```text
-Don Quixote: quijote, sancho, caballero, aventura, castillo, dulcinea
-Dracula: dracula, vampire, blood, night, fear, castle, helsing
-Moby Dick: whale, sea, ship, captain, ahab, harpoon, moby
-```
+### Tokenização
 
-> Observação: a versão atual não usa logs sintéticos no fluxo principal. Todos os benchmarks oficiais são feitos sobre as amostras em `data/samples/`.
+Como as amostras são textos literários completos, o programa realiza uma etapa de tokenização antes do benchmark. Essa etapa:
 
-### Funcionalidades da interface
-
-A interface gráfica foi organizada em uma experiência mais moderna e próxima de um painel de análise:
-
-- **Dashboard**: visão geral do projeto, atalhos e indicadores rápidos;
-- **Benchmark**: execução oficial com estratégias seriais, CPU paralela, streams, virtual threads e GPU/OpenCL;
-- **Explorar Textos**: tabela de frequência, distribuição das palavras e visualização dos tokens;
-- **Comparador Narrativo**: comparação de palavras entre as três obras, com densidade por 10 mil palavras;
-- **Gráficos**: visualização dos gráficos gerados a partir do CSV;
-- **Amostras Oficiais**: documentação visual dos textos obrigatórios e da interpretação gamificada.
-
-O **Comparador Narrativo** é uma funcionalidade adicional para reforçar o lado de jogos: ele permite comparar termos como `blood`, `whale`, `quijote`, `castle`, `ship` e `night` entre as obras, mostrando em qual “mundo narrativo” cada termo é mais representativo.
-
-### Tokenização dos textos
-
-Como as amostras são textos literários completos, e não logs com uma palavra por linha, o projeto agora faz uma etapa de tokenização antes da contagem.
-
-A leitura do arquivo transforma o texto em um vetor de palavras normalizadas:
-
-- converte tudo para minúsculas;
+- converte o texto para minúsculas;
 - remove pontuação;
 - remove acentos;
-- preserva letras e números relevantes para a busca;
+- divide o texto em palavras;
 - ignora espaços e linhas vazias.
 
-Assim, uma frase como:
+A tokenização acontece antes da medição principal. Assim, os tempos registrados nos gráficos representam principalmente o custo da **contagem em memória**, e não o tempo de leitura do disco.
 
-```text
-The vampire's blood was cold.
-```
+### Medição de tempo
 
-passa a ser analisada como palavras individuais:
-
-```text
-the vampire s blood was cold
-```
-
-### Medição do tempo
-
-O tempo é medido usando:
+O tempo é medido com:
 
 ```java
 System.nanoTime()
 ```
 
-O valor é convertido para milissegundos com casas decimais. Essa escolha é mais adequada para benchmark do que `System.currentTimeMillis()`, porque permite medir intervalos pequenos com mais precisão.
+O valor é convertido para milissegundos com casas decimais. Essa escolha é mais adequada para benchmark do que `System.currentTimeMillis()`, pois permite medir intervalos muito pequenos com maior precisão.
 
-A leitura/tokenização do arquivo acontece antes da medição principal. Assim, os tempos registrados representam principalmente o custo da contagem das palavras em memória.
-
-### Configurações testadas
-
-A versão atual testa múltiplas vertentes de paralelização:
-
-- `SerialCPU` e `SerialStream`, para comparar duas formas seriais;
-- `ParallelCPU-2t`, `ParallelCPU-4t`, `ParallelCPU-8t` e `ParallelCPU-Nt`, para testar o impacto do número de threads tradicionais;
-- `ForkJoinCPU`, para avaliar uma abordagem divide-and-conquer;
-- `ParallelStream`, para comparar com uma API paralela de alto nível do Java;
-- `VirtualThreads-50chunks` e `VirtualThreads-100chunks`, para investigar se virtual threads ajudam ou atrapalham em uma tarefa CPU-bound;
-- `ParallelGPU`, com OpenCL/JOCL, ou `ParallelGPU-FallbackCPU` quando o ambiente não possui GPU/OpenCL configurado.
-
-Cada configuração é executada **3 vezes** após um warmup descartado. A mediana dos tempos é usada nos gráficos para reduzir o impacto de outliers.
-
-> Observação: virtual threads exigem **Java 21 ou superior**. Elas foram incluídas justamente para enriquecer o benchmark, pois são muito relevantes no Java moderno, mas nem sempre são melhores em tarefas puramente CPU-bound como contagem em memória.
+Cada estratégia é executada **3 vezes**, após um warmup descartado. Os gráficos usam principalmente a **mediana**, pois ela reduz o impacto de variações pontuais.
 
 ### Métricas coletadas
 
-| Métrica | Fórmula / Descrição |
+| Métrica | Descrição |
 |---|---|
-| Ocorrências | Quantidade de vezes que a palavra buscada aparece no texto. |
+| Ocorrências | Quantidade de vezes que a palavra buscada apareceu no texto. |
 | Tempo de execução | Tempo da contagem em milissegundos. |
-| Speedup | `Tempo Serial / Tempo Método` |
-| Eficiência | `Speedup / paralelismo` para estratégias de CPU paralela e virtual threads. |
-| Throughput | `Total de palavras / Tempo (ms)` |
+| Speedup | `tempo_serial / tempo_metodo`. Indica quantas vezes o método foi mais rápido que o serial. |
+| Eficiência paralela | `speedup / número_de_threads`. Mede o aproveitamento do paralelismo. |
+| Throughput | `total_de_palavras / tempo_ms`. Mede palavras processadas por milissegundo. |
+| Preparation time | Tempo de preparação de dados, usado principalmente na GPU. |
+| Kernel time | Tempo de execução/leitura associado ao kernel OpenCL. |
 
----
-
-## Resultados e Discussão
-
-Os resultados são salvos em:
+O CSV gerado fica em:
 
 ```text
 results/resultados.csv
 ```
 
-O CSV possui as seguintes colunas:
+E possui colunas como:
 
 ```csv
-file,world,total_words,word_searched,strategy_id,method,family,parallelism,run,occurrences,time_ms,speedup,efficiency,words_per_ms,is_real_gpu
+file,world,total_words,word_searched,strategy_id,method,family,parallelism,run,occurrences,time_ms,preparation_ms,kernel_ms,speedup,efficiency,words_per_ms,is_real_gpu
 ```
-
-### Gráficos gerados
-
-A aplicação gera um conjunto curado de **14 gráficos**, cobrindo comparação serial/paralela, impacto do número de threads, granularidade de chunks, thresholds do ForkJoin, GPU por string/hash, análise estatística e resumo final para conclusão.
-
-Na interface gráfica, os gráficos são organizados por abas de categoria para facilitar a leitura:
-
-- **Comparação direta**: tempo, speedup e resumo final dos vencedores;
-- **Impacto de núcleos**: threads, speedup por threads, eficiência, chunks e ForkJoin;
-- **Impacto do tamanho**: escalabilidade e tempo normalizado por 100 mil palavras;
-- **Estabilidade**: três execuções individuais e média com desvio padrão;
-- **GPU vs CPU**: comparação CPU/GPU e decomposição do tempo da GPU.
-
-Dentro de cada aba, os gráficos podem ser navegados pelos botões **Anterior** e **Próximo**, pelo seletor no canto superior ou pelas setas do teclado. A aba de gráficos também possui **filtro por amostra**, permitindo gerar visualizações para todas as obras ou apenas para `Don Quixote`, `Dracula` ou `Moby Dick`.
-
-| Gráfico | Arquivo | Para que serve |
-|---|---|---|
-| Tempo mediano por método | `charts/chart_01_tempo_mediano.png` | Compara os principais métodos em cada amostra. |
-| Speedup em relação ao SerialCPU | `charts/chart_02_speedup_vs_serial.png` | Mostra quantas vezes cada estratégia foi mais rápida ou lenta que o serial. |
-| Impacto do número de threads - tempo | `charts/chart_03_threads_tempo.png` | Analisa como o tempo muda ao variar 1, 2, 4, 8 e N threads. |
-| Speedup por número de threads | `charts/chart_04_threads_speedup.png` | Mostra o ganho do ParallelCPU conforme o número de threads cresce. |
-| Eficiência paralela | `charts/chart_05_amdahl_efficiency.png` | Mostra o aproveitamento das threads usando `speedup / threads`. |
-| Escalabilidade por tamanho do texto | `charts/chart_06_escala_tamanho.png` | Relaciona total de palavras com tempo mediano de execução. |
-| Tempo normalizado por 100 mil palavras | `charts/chart_07_tempo_normalizado.png` | Remove o viés de tamanho e compara a velocidade real entre textos. |
-| Três execuções individuais | `charts/chart_08_tres_execucoes.png` | Mostra as 3 amostras exigidas no enunciado e a estabilidade dos métodos. |
-| Média e desvio padrão | `charts/chart_09_media_desvio.png` | Reforça a análise estatística com média ± desvio padrão. |
-| CPU vs GPU: String, Hash e Hash Reduction | `charts/chart_10_gpu_vs_cpu.png` | Compara SerialCPU, melhor CPU paralela, GPU String, GPU Hash e GPU Hash Reduction. |
-| Granularidade de chunks | `charts/chart_11_chunks.png` | Compara chunks fixos e dinâmicos no ParallelCPU. |
-| Thresholds do ForkJoin | `charts/chart_12_forkjoin_thresholds.png` | Compara thresholds fixos e dinâmicos no ForkJoin. |
-| Decomposição do tempo da GPU | `charts/chart_13_gpu_prep_kernel.png` | Separa preparação, execução/leitura e total, evidenciando o custo de buffers, transferência e retorno dos resultados. |
-| Resumo final - melhor método por amostra | `charts/chart_14_best_method_summary.png` | Tabela-resumo para conclusão do relatório: vencedor, tempo, speedup e família. |
-
-### Discussões esperadas
-
-- Em textos menores, o `SerialCPU` pode ser competitivo porque não possui overhead de criação de threads.
-- Em textos maiores, o `ParallelCPU` pode apresentar ganhos por dividir o vetor de palavras entre múltiplas threads.
-- Aumentar o número de threads nem sempre melhora o desempenho, pois pode haver overhead de criação, escalonamento e sincronização.
-- A GPU pode ter overhead alto por causa da preparação dos dados, criação/reuso de buffers, transferência CPU↔GPU e leitura dos resultados. Por isso foram comparadas três variantes: `GPU String`, `GPU Hash` e `GPU Hash Reduction`.
-- Caso apareça `ParallelGPU-FallbackCPU`, significa que o ambiente não executou GPU real; nesse caso, os resultados devem ser interpretados como fallback em CPU paralela.
 
 ---
 
-## Observação importante sobre GPU
+## Resultados e discussão
 
-A classe `ParallelGPUCounter` tenta usar OpenCL por meio do JOCL. Para execução real em GPU, é necessário ter:
+Os resultados abaixo foram gerados a partir do CSV atual do projeto. Os valores podem variar em outra máquina, principalmente nas estratégias que usam `availableProcessors()` e GPU/OpenCL.
 
-- `jocl-2.0.4.jar` no classpath;
-- bibliotecas nativas do JOCL (`.dll`, `.so` ou equivalente);
-- driver OpenCL instalado;
-- dispositivo OpenCL disponível.
+### 1. Comparação direta entre métodos
 
-Se esses requisitos não forem encontrados, o programa utiliza automaticamente um fallback em CPU com `parallelStream`, e o método aparece no CSV como:
+![Tempo mediano por método](charts/chart_01_tempo_mediano.png)
 
-```text
-ParallelGPU-FallbackCPU
-```
+O gráfico de tempo mediano mostra que o `SerialCPU` funciona como uma referência estável, mas não é o método mais rápido. As melhores estratégias foram, em geral, variações paralelas em CPU, especialmente `ParallelCPU-20t`, `ParallelCPU-8t-dynChunks`, `ForkJoinCPU-th10000` e `VirtualThreads-50chunks`, dependendo da obra analisada.
 
-Portanto, somente resultados marcados como `ParallelGPU` representam execução real em GPU.
+A GPU, principalmente na versão `GPU String`, apresentou tempos maiores. Isso indica que, para a busca textual direta, o custo de preparação e transferência de dados para OpenCL pode superar o ganho obtido com paralelismo massivo.
+
+![Speedup em relação ao SerialCPU](charts/chart_02_speedup_vs_serial.png)
+
+O gráfico de speedup reforça essa conclusão. Em algumas amostras, as estratégias paralelas em CPU alcançaram speedup superior a 3x em relação ao `SerialCPU`. Na execução registrada no CSV atual, os melhores resultados por obra foram:
+
+| Obra | Melhor método | Tempo mediano | Speedup aproximado |
+|---|---:|---:|---:|
+| Don Quixote | `ForkJoinCPU-th10000` | 0,3891 ms | 3,48x |
+| Dracula | `ParallelCPU-20t` | 0,1825 ms | 4,83x |
+| Moby Dick | `ParallelCPU-8t-dynChunks` | 0,2016 ms | 4,04x |
+
+Esses resultados mostram que o paralelismo em CPU foi efetivo, mas que o melhor método variou conforme o tamanho e a distribuição do texto.
+
+---
+
+### 2. Impacto do número de threads
+
+![Impacto do número de threads](charts/chart_03_threads_tempo.png)
+
+O gráfico de threads mostra que aumentar o número de threads tende a reduzir o tempo até certo ponto, mas o ganho não é perfeitamente linear. Em algumas obras, o uso de mais threads melhora bastante; em outras, a queda de tempo é menor.
+
+Isso acontece porque, além do trabalho útil de contagem, existe overhead de divisão de tarefas, criação/gerenciamento de threads, escalonamento e acesso concorrente à memória.
+
+![Speedup do ParallelCPU por número de threads](charts/chart_04_threads_speedup.png)
+
+O speedup por número de threads mostra que o ganho cresce com o paralelismo, mas fica muito abaixo da linha ideal. Essa diferença entre o speedup real e o ideal é esperada em sistemas paralelos, pois nem toda parte da execução é perfeitamente paralelizável.
+
+![Eficiência paralela](charts/chart_05_amdahl_efficiency.png)
+
+A eficiência paralela cai conforme o número de threads aumenta. Esse comportamento está relacionado à **Lei de Amdahl**: mesmo que parte do problema seja paralelizável, sempre há custos sequenciais e overheads que limitam o ganho total. Portanto, mais threads nem sempre significam aproveitamento proporcional.
+
+---
+
+### 3. Impacto do tamanho do texto
+
+![Escalabilidade por tamanho do texto](charts/chart_06_escala_tamanho.png)
+
+O gráfico de escalabilidade ordena os textos pelo tamanho em palavras. Ele permite observar como o tempo mediano cresce conforme o volume de entrada aumenta. Os métodos paralelos mais eficientes mantêm uma inclinação menor, indicando melhor escalabilidade.
+
+![Tempo normalizado por 100 mil palavras](charts/chart_07_tempo_normalizado.png)
+
+O tempo normalizado por 100 mil palavras remove parte do viés causado pelo tamanho diferente das obras. Ele mostra o custo relativo de cada método para processar volumes comparáveis de palavras. Essa métrica é especialmente útil porque os textos obrigatórios possuem tamanhos diferentes.
+
+---
+
+### 4. Estabilidade das execuções
+
+![Tempo das 3 execuções individuais](charts/chart_08_tres_execucoes.png)
+
+O enunciado exige pelo menos 3 execuções por método. Este gráfico mostra as três medições individuais e permite observar a estabilidade do benchmark. Barras próximas indicam resultados mais reprodutíveis; variações maiores indicam influência de ruído, escalonamento da JVM ou custos variáveis de execução.
+
+![Média e desvio padrão](charts/chart_09_media_desvio.png)
+
+A média com desvio padrão complementa a mediana. Métodos com barras de erro pequenas apresentaram comportamento mais estável. Em métodos com maior overhead, como algumas estratégias de GPU, o desvio pode ser maior, indicando maior variação entre execuções.
+
+---
+
+### 5. Granularidade do paralelismo
+
+![Granularidade de chunks](charts/chart_11_chunks.png)
+
+Este gráfico compara versões com chunks fixos e dinâmicos. A granularidade influencia diretamente o desempenho: chunks pequenos podem melhorar o balanceamento, mas também aumentam o número de tarefas; chunks grandes reduzem overhead, mas podem desperdiçar paralelismo.
+
+A versão dinâmica tenta encontrar um equilíbrio entre esses extremos, calculando a divisão conforme o tamanho do texto. Na execução atual, essa abordagem foi especialmente competitiva em `Moby Dick`.
+
+![Thresholds do ForkJoin](charts/chart_12_forkjoin_thresholds.png)
+
+O ForkJoin também depende de granularidade, representada pelo threshold. Thresholds menores criam mais subtarefas recursivas; thresholds maiores reduzem a quantidade de tarefas, mas podem limitar o paralelismo. Os resultados mostram que não existe um threshold universalmente melhor para todas as obras.
+
+Esse comportamento reforça a importância de testar estratégias diferentes em vez de assumir que uma única configuração será ideal.
+
+---
+
+### 6. GPU/OpenCL: string versus hash
+
+![CPU vs GPU String e GPU Hash](charts/chart_10_gpu_vs_cpu.png)
+
+A comparação entre CPU e GPU mostra que a GPU não superou as melhores estratégias paralelas em CPU nas amostras analisadas. No entanto, a versão `GPU Hash` melhorou significativamente em relação à `GPU String`.
+
+Isso acontece porque a `GPU String` precisa comparar caracteres, offsets e tamanhos variáveis, enquanto a `GPU Hash` transforma a busca em uma comparação numérica (`hashCode + length`). Essa forma é mais adequada ao modelo de execução da GPU, que favorece operações simples, uniformes e massivamente paralelas.
+
+![Decomposição do tempo da GPU](charts/chart_13_gpu_prep_kernel.png)
+
+A decomposição do tempo da GPU mostra que grande parte do custo está na preparação dos dados, especialmente na versão `GPU String`. No caso da `GPU Hash`, a preparação fica menor, e a comparação no kernel também se torna mais simples.
+
+Mesmo assim, a GPU ainda precisa lidar com custos de transferência de dados, criação de buffers e leitura dos resultados. Como as amostras obrigatórias não são extremamente grandes para padrões de GPU, esse overhead não foi amortizado o suficiente para superar a CPU paralela.
+
+---
+
+### 7. Resumo final dos melhores métodos
+
+![Resumo do melhor método por amostra](charts/chart_14_best_method_summary.png)
+
+O gráfico-resumo mostra o melhor método em cada obra, seu tempo mediano, speedup e família. Ele é útil para a conclusão porque evidencia que o vencedor não foi sempre o mesmo. O desempenho dependeu da interação entre tamanho do texto, estratégia de paralelização, granularidade e overhead.
+
+---
+
+## Conclusão
+
+O **GameText Analyzer** cumpre o objetivo do trabalho ao comparar algoritmos seriais, paralelos em CPU e paralelos em GPU/OpenCL para busca de palavras em textos. A aplicação utiliza as amostras obrigatórias, registra os resultados em CSV, executa pelo menos três medições por método e gera gráficos para análise estatística e visual.
+
+A principal conclusão é que o paralelismo em CPU foi o mais vantajoso para as amostras analisadas. Estratégias como `ParallelCPU`, `ParallelStream`, `ForkJoin` e `VirtualThreads` reduziram o tempo de execução em relação ao `SerialCPU`, mas o ganho não foi linear. O número de threads, a granularidade dos chunks e o threshold do ForkJoin influenciaram diretamente o desempenho.
+
+A GPU/OpenCL foi tecnicamente implementada e comparada em duas versões: `GPU String` e `GPU Hash`. A versão por hash melhorou o desempenho por transformar a busca textual em comparação numérica, mas ainda não superou as melhores estratégias em CPU. Isso sugere que, para este problema e para o volume das amostras obrigatórias, o overhead de preparação, transferência e leitura da GPU foi maior que o benefício do paralelismo massivo.
+
+Assim, o trabalho demonstra que **paralelizar não significa automaticamente acelerar**. A escolha da melhor estratégia depende do tamanho da entrada, da natureza da operação, da granularidade das tarefas, do ambiente de execução e do custo de comunicação entre CPU e GPU.
 
 ---
 
@@ -217,30 +264,30 @@ Portanto, somente resultados marcados como `ParallelGPU` representam execução 
 
 ### Pré-requisitos
 
-- Java 21 ou superior, necessário para as estratégias com Virtual Threads;
+- Java 21 ou superior;
 - `javac` no PATH;
-- arquivos das amostras dentro de `data/samples/`.
+- arquivos das amostras em `data/samples/`;
+- opcionalmente, driver OpenCL instalado para execução real da GPU;
+- `jocl-2.0.4.jar` em `lib/` para suporte JOCL.
 
-### Compilar e executar no modo console
+### Executar interface gráfica
 
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
-O script compila o projeto e abre o menu de console.
+### Executar modo console
 
-### Executar interface gráfica
+```bash
+./build.sh --console
+```
+
+### Compilar manualmente
 
 ```bash
 find src/main/java -name "*.java" | xargs javac --release 21 -d out -cp "out:lib/*"
 java -cp "out:lib/*" gamelog.Main
-```
-
-### Executar console manualmente
-
-```bash
-java -Djava.awt.headless=true -cp "out:lib/*" gamelog.Main --console
 ```
 
 ---
@@ -250,78 +297,74 @@ java -Djava.awt.headless=true -cp "out:lib/*" gamelog.Main --console
 ```text
 GameTextAnalyzer/
 ├── src/main/java/gamelog/
-│   ├── Main.java                   # Ponto de entrada + menu console/GUI
-│   ├── SampleConfig.java           # Configuração das amostras oficiais
-│   ├── CsvReader.java              # Leitura do CSV para regenerar gráficos
+│   ├── Main.java
+│   ├── SampleConfig.java
+│   ├── CsvReader.java
 │   ├── benchmark/
-│   │   ├── BenchmarkRunner.java    # Orquestra runs, warmup e métricas
-│   │   ├── BenchmarkResult.java    # Modelo de dados de um resultado
-│   │   └── CsvWriter.java          # Escrita do CSV
+│   │   ├── BenchmarkRunner.java
+│   │   ├── BenchmarkResult.java
+│   │   └── CsvWriter.java
 │   ├── counters/
-│   │   ├── WordCounter.java        # Interface comum das estratégias
-│   │   ├── StrategyFamily.java     # Famílias: serial, CPU, virtual threads, GPU
-│   │   ├── StrategyRegistry.java   # Registro central dos métodos testados
-│   │   ├── SerialCPUCounter.java   # Loop sequencial
-│   │   ├── SerialStreamCounter.java# Stream sequencial
-│   │   ├── ParallelCPUCounter.java # ExecutorService + Future
-│   │   ├── ForkJoinCPUCounter.java # ForkJoinPool recursivo
-│   │   ├── ParallelStreamCounter.java # Stream paralela
-│   │   ├── VirtualThreadCounter.java # Java 21 virtual threads
-│   │   └── ParallelGPUCounter.java # OpenCL/JOCL com fallback
+│   │   ├── WordCounter.java
+│   │   ├── StrategyFamily.java
+│   │   ├── StrategyRegistry.java
+│   │   ├── SerialCPUCounter.java
+│   │   ├── SerialStreamCounter.java
+│   │   ├── ParallelCPUCounter.java
+│   │   ├── ChunkedParallelCPUCounter.java
+│   │   ├── ForkJoinCPUCounter.java
+│   │   ├── ParallelStreamCounter.java
+│   │   ├── VirtualThreadCounter.java
+│   │   ├── ParallelGPUCounter.java
+│   │   └── ParallelGPUHashCounter.java
 │   ├── ui/
-│   │   └── ...                     # Interface gráfica e geração de gráficos
+│   │   ├── MainWindow.java
+│   │   ├── BenchmarkPanel.java
+│   │   ├── ChartsPanel.java
+│   │   ├── ChartGenerator.java
+│   │   └── ...
 │   └── utils/
-│       └── FileUtils.java          # Leitura e tokenização de arquivos
-├── data/
-│   └── samples/                    # Amostras obrigatórias da atividade
-├── results/resultados.csv          # Resultados do benchmark
-├── charts/                         # Gráficos PNG
-├── lib/                            # Bibliotecas opcionais, como JOCL
-└── build.sh                        # Script de compilação e execução no console
+│       └── FileUtils.java
+├── data/samples/
+├── results/resultados.csv
+├── charts/
+├── lib/
+│   ├── flatlaf-3.5.4.jar
+│   └── jocl-2.0.4.jar
+└── build.sh
 ```
 
 ---
 
-## Conclusão
+## Observações sobre GPU/OpenCL
 
-O **GameText Analyzer** cumpre a proposta da atividade ao comparar algoritmos de contagem de palavras em ambientes serial, paralelo em CPU e GPU/OpenCL. A adaptação do projeto para usar as amostras obrigatórias fortalece a aderência ao enunciado, enquanto a camada de gamificação permanece na interpretação dos textos como mundos narrativos de possíveis jogos digitais.
+Para que os métodos GPU sejam executados de verdade, é necessário que a máquina possua OpenCL configurado corretamente. O projeto utiliza JOCL como ponte entre Java e OpenCL.
 
-A análise permite discutir não apenas qual método foi mais rápido, mas também quando o paralelismo compensa, como o número de threads afeta o desempenho e quais limitações aparecem no uso de GPU com OpenCL.
+Requisitos para GPU real:
+
+- driver OpenCL instalado;
+- dispositivo compatível com OpenCL;
+- `jocl-2.0.4.jar` no classpath;
+- bibliotecas nativas necessárias disponíveis no sistema.
+
+Caso o ambiente não suporte OpenCL, o projeto pode usar fallback em CPU, identificado no nome do método e no CSV. Apenas resultados com `is_real_gpu = true` devem ser interpretados como execução real em GPU/OpenCL.
 
 ---
 
 ## Referências
 
-- Java ExecutorService documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html
-- Java Virtual Threads documentation: https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html
-- Java System.nanoTime documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#nanoTime()
+- Java ExecutorService Documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html
+- Java Virtual Threads Documentation: https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html
+- Java System.nanoTime Documentation: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#nanoTime()
 - JOCL - Java bindings for OpenCL: https://github.com/gpu/JOCL
 - OpenCL Specification - Khronos Group: https://www.khronos.org/opencl/
-- Amdahl, G. M. Validity of the Single Processor Approach to Achieving Large Scale Computing Capabilities. AFIPS, 1967.
+- Amdahl, G. M. *Validity of the Single Processor Approach to Achieving Large Scale Computing Capabilities*. AFIPS, 1967.
 
 ---
 
 ## Anexos
 
-Os códigos-fonte completos estão disponíveis nas pastas `src/main/java/gamelog/`.
+Os códigos-fonte completos estão disponíveis em `src/main/java/gamelog/`.
 
-> **Link do projeto:** https://github.com/SEU_USUARIO/GameTextAnalyzer *(substituir pelo link real)*
-
----
-
-## Atualização: benchmark modular avançado
-
-A aplicação foi expandida para funcionar como um benchmark modular de estratégias de paralelização. Além dos métodos principais do enunciado, foram adicionadas variações experimentais para enriquecer a análise:
-
-- `ParallelCPU-8t-32chunks` e `ParallelCPU-8t-128chunks`: versões com chunks fixos para estudar granularidade de tarefas;
-- `ParallelCPU-8t-dynChunks`: versão com chunks dinâmicos calculados a partir do tamanho do texto;
-- `ForkJoinCPU-th2000`, `ForkJoinCPU-th10000` e `ForkJoinCPU-dyn`: versões com thresholds fixos e dinâmico;
-- `ParallelGPU-String`: versão GPU/OpenCL baseada em comparação textual por bytes;
-- `ParallelGPU-Hash`: versão GPU/OpenCL baseada em códigos inteiros (`hashCode` + tamanho da palavra), mantendo a versão por string para comparação;
-- métricas extras `preparation_ms` e `kernel_ms`, úteis para analisar o custo de preparação/transferência de dados na GPU.
-
-A aba de gráficos também passou a ter filtro por amostra. É possível gerar visualizações para todas as obras juntas ou apenas para `Don Quixote`, `Dracula` ou `Moby Dick`, facilitando a escrita do relatório por cenário.
-
-### Observação sobre a GPU por hash
-
-A versão `ParallelGPU-Hash` é uma estratégia experimental de otimização. Ela transforma cada palavra em um inteiro para reduzir o custo da comparação na GPU. Essa abordagem é mais adequada ao modelo de processamento da GPU, mas pode ter colisões teóricas de hash. Por isso, a versão `ParallelGPU-String` foi mantida como comparação mais fiel à busca textual exata.
+> **Link do projeto no GitHub:** https://github.com/SEU_USUARIO/GameTextAnalyzer  
+> Substituir pelo link real antes da entrega.
