@@ -516,4 +516,3 @@ Caso o ambiente não suporte OpenCL, o projeto pode usar fallback em CPU, identi
 Os códigos-fonte completos estão disponíveis em `src/main/java/gamelog/`.
 
 > **Link do projeto no GitHub:** https://github.com/raquelx99/GameTextAnalyzer  
-> Substituir pelo link real antes da entrega.
