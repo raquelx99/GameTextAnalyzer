@@ -142,27 +142,41 @@ file,world,total_words,word_searched,strategy_id,method,family,parallelism,run,o
 
 ## Resultados e discussão
 
-Os resultados abaixo foram gerados a partir do CSV atual do projeto. Os valores podem variar em outra máquina, principalmente nas estratégias que usam `availableProcessors()` e GPU/OpenCL.
+Os resultados apresentados nesta seção foram gerados a partir do arquivo `results/resultados.csv`, produzido automaticamente pelo benchmark da aplicação. Como o desempenho pode variar de acordo com o hardware, número de núcleos disponíveis, estado da JVM, driver OpenCL, disponibilidade de GPU e carga do sistema operacional, os valores devem ser interpretados como resultados obtidos no ambiente de teste utilizado.
+
+A análise foi organizada em torno dos principais objetivos do trabalho: comparar métodos seriais, paralelos em CPU e paralelos em GPU; investigar o impacto do número de threads; observar a influência do tamanho das entradas; avaliar a estabilidade estatística das execuções; discutir a granularidade das tarefas; e analisar o custo de uso da GPU em diferentes representações de dados.
+
+---
 
 ### 1. Comparação direta entre métodos
 
 ![Tempo mediano por método](charts/chart_01_tempo_mediano.png)
 
-O gráfico de tempo mediano mostra que o `SerialCPU` funciona como uma referência estável, mas não é o método mais rápido. As melhores estratégias foram, em geral, variações paralelas em CPU, especialmente `ParallelCPU-20t`, `ParallelCPU-8t-dynChunks`, `ForkJoinCPU-th10000` e `VirtualThreads-50chunks`, dependendo da obra analisada.
+O gráfico de tempo mediano apresenta uma comparação direta entre as principais estratégias implementadas. O `SerialCPU` foi utilizado como baseline, pois representa a abordagem mais simples: percorrer o vetor de palavras sequencialmente e contar as ocorrências da palavra-alvo.
 
-A GPU, principalmente na versão `GPU String`, apresentou tempos maiores. Isso indica que, para a busca textual direta, o custo de preparação e transferência de dados para OpenCL pode superar o ganho obtido com paralelismo massivo.
+Os resultados mostram que o método serial é estável e previsível, mas não foi o mais rápido. As estratégias paralelas em CPU apresentaram redução significativa no tempo de execução, especialmente as variações baseadas em `ParallelCPU`, `ForkJoin`, `ParallelStream` e `Virtual Threads`. Isso indica que a tarefa de contagem de palavras possui uma parte altamente paralelizável: diferentes trechos do texto podem ser processados independentemente e seus resultados parciais podem ser somados ao final.
+
+Entretanto, o melhor método não foi sempre o mesmo para todas as obras. Isso mostra que o desempenho não depende apenas do algoritmo, mas também do tamanho da entrada, da distribuição dos dados, da granularidade das tarefas e do overhead de cada estratégia.
 
 ![Speedup em relação ao SerialCPU](charts/chart_02_speedup_vs_serial.png)
 
-O gráfico de speedup reforça essa conclusão. Em algumas amostras, as estratégias paralelas em CPU alcançaram speedup superior a 3x em relação ao `SerialCPU`. Na execução registrada no CSV atual, os melhores resultados por obra foram:
+O gráfico de speedup reforça essa interpretação. O speedup mede quantas vezes um método foi mais rápido que o `SerialCPU`, usando a fórmula:
 
-| Obra | Melhor método | Tempo mediano | Speedup aproximado |
-|---|---:|---:|---:|
-| Don Quixote | `ForkJoinCPU-th10000` | 0,3891 ms | 3,48x |
-| Dracula | `ParallelCPU-20t` | 0,1825 ms | 4,83x |
-| Moby Dick | `ParallelCPU-8t-dynChunks` | 0,2016 ms | 4,04x |
+```text
+speedup = tempo_serial / tempo_metodo
+```
 
-Esses resultados mostram que o paralelismo em CPU foi efetivo, mas que o melhor método variou conforme o tamanho e a distribuição do texto.
+Valores maiores que 1 indicam ganho de desempenho em relação ao serial. Em algumas amostras, as estratégias paralelas em CPU alcançaram speedups superiores a 3x, demonstrando que a paralelização foi vantajosa.
+
+Na execução registrada no CSV atual, os melhores resultados observados por obra foram:
+
+| Obra        |              Melhor método | Tempo mediano | Speedup aproximado |
+| ----------- | -------------------------: | ------------: | -----------------: |
+| Don Quixote |      `ForkJoinCPU-th10000` |     0,3891 ms |              3,48x |
+| Dracula     |          `ParallelCPU-20t` |     0,1825 ms |              4,83x |
+| Moby Dick   | `ParallelCPU-8t-dynChunks` |     0,2016 ms |              4,04x |
+
+Esses resultados indicam que o paralelismo em CPU foi eficiente para as amostras analisadas. Porém, a variação do método vencedor reforça que não existe uma estratégia universalmente superior. O melhor desempenho depende do equilíbrio entre quantidade de trabalho, divisão das tarefas e custo de coordenação.
 
 ---
 
@@ -170,17 +184,40 @@ Esses resultados mostram que o paralelismo em CPU foi efetivo, mas que o melhor 
 
 ![Impacto do número de threads](charts/chart_03_threads_tempo.png)
 
-O gráfico de threads mostra que aumentar o número de threads tende a reduzir o tempo até certo ponto, mas o ganho não é perfeitamente linear. Em algumas obras, o uso de mais threads melhora bastante; em outras, a queda de tempo é menor.
+O gráfico de impacto do número de threads mostra o tempo mediano do `ParallelCPU` ao variar a quantidade de threads. Essa análise atende diretamente ao requisito do trabalho de investigar o comportamento dos algoritmos sob diferentes configurações de processamento paralelo.
 
-Isso acontece porque, além do trabalho útil de contagem, existe overhead de divisão de tarefas, criação/gerenciamento de threads, escalonamento e acesso concorrente à memória.
+Em geral, aumentar o número de threads reduziu o tempo de execução, especialmente quando comparado ao baseline de 1 thread. Isso ocorre porque o texto é dividido em partes menores, permitindo que múltiplos núcleos da CPU trabalhem simultaneamente.
+
+No entanto, a redução do tempo não acontece de forma perfeitamente linear. Isso é esperado, pois o paralelismo introduz custos adicionais, como:
+
+* divisão do vetor de palavras em chunks;
+* criação ou gerenciamento de tarefas;
+* escalonamento das threads pelo sistema operacional;
+* acesso concorrente à memória;
+* soma dos resultados parciais;
+* overhead da própria infraestrutura de execução.
+
+Portanto, mesmo que a contagem seja uma tarefa paralelizável, o ganho real depende do custo de coordenar o trabalho paralelo.
 
 ![Speedup do ParallelCPU por número de threads](charts/chart_04_threads_speedup.png)
 
-O speedup por número de threads mostra que o ganho cresce com o paralelismo, mas fica muito abaixo da linha ideal. Essa diferença entre o speedup real e o ideal é esperada em sistemas paralelos, pois nem toda parte da execução é perfeitamente paralelizável.
+O gráfico de speedup por número de threads mostra que o ganho cresce conforme mais threads são usadas, mas fica abaixo da linha ideal. A linha ideal representaria um crescimento perfeitamente linear: por exemplo, 2 threads gerariam 2x de speedup, 4 threads gerariam 4x, e assim por diante.
+
+Na prática, o speedup real fica abaixo desse limite porque parte da execução não é paralelizável ou sofre overhead. Esse comportamento é comum em benchmarks paralelos e evidencia que adicionar mais threads não garante ganho proporcional.
 
 ![Eficiência paralela](charts/chart_05_amdahl_efficiency.png)
 
-A eficiência paralela cai conforme o número de threads aumenta. Esse comportamento está relacionado à **Lei de Amdahl**: mesmo que parte do problema seja paralelizável, sempre há custos sequenciais e overheads que limitam o ganho total. Portanto, mais threads nem sempre significam aproveitamento proporcional.
+A eficiência paralela foi calculada como:
+
+```text
+eficiência = speedup / número_de_threads
+```
+
+Esse gráfico mostra que a eficiência tende a diminuir conforme o número de threads aumenta. Isso significa que, embora o tempo total possa melhorar, cada thread adicional contribui proporcionalmente menos para o desempenho.
+
+Esse resultado se relaciona com a Lei de Amdahl, que afirma que o ganho máximo de um programa paralelo é limitado pela fração do programa que permanece sequencial. No caso deste trabalho, mesmo que a contagem em si seja paralelizável, ainda existem etapas de coordenação, divisão e agregação que limitam o ganho.
+
+Assim, os resultados indicam que o paralelismo em CPU é vantajoso, mas precisa ser bem configurado. Usar mais threads pode melhorar o desempenho até certo ponto, mas também pode gerar overhead e perda de eficiência.
 
 ---
 
@@ -188,11 +225,23 @@ A eficiência paralela cai conforme o número de threads aumenta. Esse comportam
 
 ![Escalabilidade por tamanho do texto](charts/chart_06_escala_tamanho.png)
 
-O gráfico de escalabilidade ordena os textos pelo tamanho em palavras. Ele permite observar como o tempo mediano cresce conforme o volume de entrada aumenta. Os métodos paralelos mais eficientes mantêm uma inclinação menor, indicando melhor escalabilidade.
+O gráfico de escalabilidade mostra o comportamento dos métodos conforme o tamanho do texto aumenta. As obras utilizadas possuem quantidades diferentes de palavras, o que permite observar como cada estratégia responde ao aumento do volume de dados.
+
+Esse gráfico é importante porque um método pode ser rápido em textos menores, mas escalar mal em textos maiores. Estratégias mais eficientes tendem a apresentar uma curva com inclinação menor, indicando que o tempo cresce de forma mais controlada conforme o tamanho da entrada aumenta.
+
+Os resultados mostram que as estratégias paralelas em CPU escalaram melhor que o método serial. Isso ocorre porque, à medida que o volume de palavras cresce, há mais trabalho disponível para ser distribuído entre threads. Dessa forma, o overhead da paralelização tende a ser mais compensado em entradas maiores.
 
 ![Tempo normalizado por 100 mil palavras](charts/chart_07_tempo_normalizado.png)
 
-O tempo normalizado por 100 mil palavras remove parte do viés causado pelo tamanho diferente das obras. Ele mostra o custo relativo de cada método para processar volumes comparáveis de palavras. Essa métrica é especialmente útil porque os textos obrigatórios possuem tamanhos diferentes.
+O gráfico de tempo normalizado por 100 mil palavras complementa a análise anterior. Como as obras têm tamanhos diferentes, comparar apenas o tempo bruto pode gerar interpretações injustas: textos maiores naturalmente tendem a demorar mais.
+
+A métrica normalizada calcula aproximadamente quanto tempo cada método levaria para processar um mesmo volume de palavras:
+
+```text
+tempo_normalizado = tempo_ms / total_palavras * 100000
+```
+
+Com isso, é possível comparar a eficiência relativa dos métodos independentemente do tamanho absoluto de cada obra. Os resultados mostram que as estratégias paralelas mais ajustadas mantiveram melhor desempenho relativo, enquanto métodos com maior overhead, como algumas versões de GPU, apresentaram custo proporcional mais alto.
 
 ---
 
@@ -200,63 +249,163 @@ O tempo normalizado por 100 mil palavras remove parte do viés causado pelo tama
 
 ![Tempo das 3 execuções individuais](charts/chart_08_tres_execucoes.png)
 
-O enunciado exige pelo menos 3 execuções por método. Este gráfico mostra as três medições individuais e permite observar a estabilidade do benchmark. Barras próximas indicam resultados mais reprodutíveis; variações maiores indicam influência de ruído, escalonamento da JVM ou custos variáveis de execução.
+O enunciado exige pelo menos três execuções por método. Este gráfico apresenta as três medições individuais, permitindo avaliar a reprodutibilidade dos resultados.
+
+Quando as barras de um mesmo método ficam próximas, isso indica estabilidade. Quando há variação significativa, pode haver influência de fatores como:
+
+* aquecimento da JVM;
+* otimizações do JIT Compiler;
+* escalonamento de threads;
+* carga do sistema operacional;
+* variação no acesso à memória;
+* overhead variável em métodos mais complexos.
+
+A presença de três execuções permite reduzir a chance de tirar conclusões a partir de uma medição isolada.
 
 ![Média e desvio padrão](charts/chart_09_media_desvio.png)
 
-A média com desvio padrão complementa a mediana. Métodos com barras de erro pequenas apresentaram comportamento mais estável. Em métodos com maior overhead, como algumas estratégias de GPU, o desvio pode ser maior, indicando maior variação entre execuções.
+O gráfico de média com desvio padrão complementa a análise de estabilidade. A média mostra o comportamento geral de cada método, enquanto o desvio padrão indica o quanto os tempos oscilaram entre as execuções.
+
+Métodos com menor desvio padrão são mais previsíveis. Métodos com maior variação podem ser mais sensíveis ao ambiente de execução ou ao overhead interno da estratégia. Isso é especialmente relevante em métodos que envolvem maior complexidade, como GPU/OpenCL, virtual threads ou estratégias com muitas tarefas.
 
 ---
 
-### 5. Granularidade do paralelismo
+### 5. Granularidade do paralelismo em CPU
 
 ![Granularidade de chunks](charts/chart_11_chunks.png)
 
-Este gráfico compara versões com chunks fixos e dinâmicos. A granularidade influencia diretamente o desempenho: chunks pequenos podem melhorar o balanceamento, mas também aumentam o número de tarefas; chunks grandes reduzem overhead, mas podem desperdiçar paralelismo.
+Além de variar o número de threads, o projeto também testou diferentes formas de dividir o trabalho. Essa decisão é importante porque o desempenho paralelo não depende apenas de quantas threads são usadas, mas também de como o texto é particionado.
 
-A versão dinâmica tenta encontrar um equilíbrio entre esses extremos, calculando a divisão conforme o tamanho do texto. Na execução atual, essa abordagem foi especialmente competitiva em `Moby Dick`.
+No caso do `ParallelCPU`, foram testadas estratégias com chunks fixos e dinâmicos:
+
+* `ParallelCPU-8t-32chunks`;
+* `ParallelCPU-8t-128chunks`;
+* `ParallelCPU-8t-dynChunks`.
+
+Chunks maiores reduzem overhead, pois geram menos tarefas, mas podem distribuir mal o trabalho. Chunks menores podem melhorar o balanceamento, mas aumentam o custo de gerenciamento das tarefas. A estratégia dinâmica tenta equilibrar esses dois fatores calculando a quantidade de chunks de acordo com o tamanho da entrada.
+
+Os resultados mostram que a granularidade tem impacto real no desempenho. Em algumas amostras, chunks dinâmicos foram mais competitivos, sugerindo que adaptar a divisão ao tamanho do texto pode ser melhor do que usar uma configuração fixa.
 
 ![Thresholds do ForkJoin](charts/chart_12_forkjoin_thresholds.png)
 
-O ForkJoin também depende de granularidade, representada pelo threshold. Thresholds menores criam mais subtarefas recursivas; thresholds maiores reduzem a quantidade de tarefas, mas podem limitar o paralelismo. Os resultados mostram que não existe um threshold universalmente melhor para todas as obras.
+O mesmo princípio aparece no `ForkJoin`. Nessa estratégia, o texto é dividido recursivamente até que cada subtarefa atinja um tamanho mínimo definido pelo threshold.
 
-Esse comportamento reforça a importância de testar estratégias diferentes em vez de assumir que uma única configuração será ideal.
+Thresholds menores criam mais tarefas, aumentando o potencial de paralelismo, mas também aumentam overhead. Thresholds maiores reduzem a quantidade de tarefas, mas podem limitar a distribuição do trabalho entre os núcleos.
+
+Foram testadas versões com thresholds fixos e dinâmico:
+
+* `ForkJoinCPU-th2000`;
+* `ForkJoinCPU-th10000`;
+* `ForkJoinCPU-dyn`.
+
+Os resultados indicam que não existe um threshold ideal para todos os textos. Isso reforça uma conclusão importante do benchmark: a granularidade é uma variável crítica em métodos paralelos e precisa ser ajustada conforme o tamanho e o comportamento da entrada.
 
 ---
 
-### 6. GPU/OpenCL: string versus hash
+### 6. GPU/OpenCL: comparação entre String, Hash e CPU
 
-![CPU vs GPU String e GPU Hash](charts/chart_10_gpu_vs_cpu.png)
+![CPU vs GPU String, GPU Hash e GPU HashReduction](charts/chart_10_gpu_vs_cpu.png)
 
-A comparação entre CPU e GPU mostra que a GPU não superou as melhores estratégias paralelas em CPU nas amostras analisadas. No entanto, a versão `GPU Hash` melhorou significativamente em relação à `GPU String`.
+A execução em GPU foi uma das partes mais complexas do projeto. Foram implementadas três abordagens principais:
 
-Isso acontece porque a `GPU String` precisa comparar caracteres, offsets e tamanhos variáveis, enquanto a `GPU Hash` transforma a busca em uma comparação numérica (`hashCode + length`). Essa forma é mais adequada ao modelo de execução da GPU, que favorece operações simples, uniformes e massivamente paralelas.
+* `ParallelGPU-String`;
+* `ParallelGPU-Hash`;
+* `ParallelGPU-HashReduction`.
+
+A versão `GPU String` representa a abordagem mais direta. Nela, o texto é convertido para bytes, e o kernel OpenCL recebe:
+
+* um buffer com os caracteres das palavras;
+* um vetor de offsets;
+* um vetor com os tamanhos das palavras;
+* a palavra-alvo em bytes;
+* um vetor de resultados.
+
+Cada work-item da GPU verifica uma palavra comparando seus caracteres com a palavra buscada. Essa abordagem é mais fiel à comparação textual, mas é menos eficiente para GPU, pois envolve:
+
+* palavras com tamanhos diferentes;
+* acessos indiretos por offset;
+* comparação caractere por caractere;
+* divergência entre work-items;
+* maior volume de dados textuais transferidos.
+
+A GPU é mais eficiente quando executa operações simples, uniformes e repetidas em grande escala. A comparação direta de strings não se encaixa perfeitamente nesse perfil, pois cada palavra pode exigir um número diferente de comparações.
+
+Já a versão `GPU Hash` transforma cada palavra em uma representação numérica:
+
+```text
+hashCode + length
+```
+
+Nesse caso, o kernel não compara caracteres diretamente. Ele apenas verifica se o hash e o tamanho da palavra coincidem com o hash e o tamanho da palavra buscada. Isso torna a operação muito mais simples para a GPU, pois cada work-item executa comparações inteiras e uniformes.
+
+Essa mudança reduz o custo do kernel e diminui a complexidade da tarefa enviada à GPU. Por isso, a `GPU Hash` tende a apresentar desempenho melhor que a `GPU String`.
+
+A versão `GPU HashReduction` acrescenta uma otimização adicional. Em vez de retornar um resultado individual para cada palavra, a GPU realiza uma redução parcial no próprio kernel OpenCL. Assim, cada grupo de trabalho soma parte das ocorrências e retorna apenas resultados parciais para a CPU. Isso reduz o volume de dados transferido da GPU de volta para a CPU.
+
+Em resumo:
+
+| Estratégia          | Vantagem                                       | Desvantagem                                          |
+| ------------------- | ---------------------------------------------- | ---------------------------------------------------- |
+| `GPU String`        | Comparação textual direta e mais fiel          | Kernel mais pesado, acesso irregular, maior overhead |
+| `GPU Hash`          | Comparação numérica simples e mais rápida      | Possibilidade teórica de colisão                     |
+| `GPU Hash + length` | Reduz risco de colisão e mantém kernel simples | Ainda não é uma verificação textual completa         |
+| `GPU HashReduction` | Reduz o volume de dados retornado à CPU        | Exige kernel mais elaborado e etapa de redução       |
+
+Apesar das otimizações por hash e redução parcial, a GPU não superou as melhores estratégias paralelas em CPU nas amostras analisadas. Isso sugere que, para textos desse tamanho e para uma tarefa simples de contagem, o overhead da GPU ainda pesa mais do que o ganho obtido com paralelismo massivo.
+
+---
+
+### 7. Decomposição do tempo da GPU
 
 ![Decomposição do tempo da GPU](charts/chart_13_gpu_prep_kernel.png)
 
-A decomposição do tempo da GPU mostra que grande parte do custo está na preparação dos dados, especialmente na versão `GPU String`. No caso da `GPU Hash`, a preparação fica menor, e a comparação no kernel também se torna mais simples.
+A decomposição do tempo da GPU ajuda a entender por que ela não foi a estratégia mais rápida.
 
-Mesmo assim, a GPU ainda precisa lidar com custos de transferência de dados, criação de buffers e leitura dos resultados. Como as amostras obrigatórias não são extremamente grandes para padrões de GPU, esse overhead não foi amortizado o suficiente para superar a CPU paralela.
+O tempo da GPU pode ser dividido em duas partes principais:
+
+1. **Preparação dos dados**
+   Inclui conversão das palavras, cálculo de hashes ou bytes, criação de buffers e envio dos dados para a GPU.
+
+2. **Kernel/leitura**
+   Inclui a execução do kernel OpenCL e a leitura dos resultados de volta para a CPU.
+
+Na versão `GPU String`, a preparação é mais custosa porque é necessário converter e enviar uma representação textual mais complexa: caracteres, offsets e tamanhos. Além disso, o kernel precisa comparar caracteres individualmente.
+
+Na versão `GPU Hash`, a preparação ainda existe, mas a representação enviada é mais simples: arrays de inteiros com hashes e tamanhos. O kernel também se torna menor e mais uniforme.
+
+Na versão `GPU HashReduction`, além da comparação numérica, parte da soma dos resultados é feita dentro da própria GPU. Essa abordagem reduz a quantidade de dados retornados para a CPU, atacando um dos gargalos observados nas versões anteriores.
+
+Mesmo assim, o gráfico mostra que parte significativa do tempo total da GPU ainda está relacionada à preparação e transferência de dados. Isso explica por que a GPU não venceu a CPU: embora a GPU tenha grande capacidade de paralelismo, o custo de preparar e movimentar os dados pode ser alto demais para uma tarefa simples e para amostras de tamanho limitado.
+
+Essa análise mostra um ponto importante sobre paralelismo: acelerar uma tarefa não depende apenas da quantidade de núcleos disponíveis, mas também do custo de comunicação entre as unidades de processamento.
 
 ---
 
-### 7. Resumo final dos melhores métodos
+### 8. Resumo dos melhores métodos
 
 ![Resumo do melhor método por amostra](charts/chart_14_best_method_summary.png)
 
-O gráfico-resumo mostra o melhor método em cada obra, seu tempo mediano, speedup e família. Ele é útil para a conclusão porque evidencia que o vencedor não foi sempre o mesmo. O desempenho dependeu da interação entre tamanho do texto, estratégia de paralelização, granularidade e overhead.
+O gráfico-resumo apresenta o melhor método encontrado para cada obra, considerando o tempo mediano das execuções. Ele é útil para visualizar que o vencedor não foi sempre o mesmo.
+
+Isso reforça a principal conclusão do benchmark: a escolha da melhor estratégia depende do contexto. O tamanho do texto, a granularidade dos chunks, a quantidade de threads, o threshold do ForkJoin e o overhead da GPU influenciam diretamente os resultados.
+
+Assim, o trabalho não apenas compara métodos, mas demonstra que a otimização de desempenho exige experimentação. Diferentes estratégias podem ser melhores em diferentes cenários, e o benchmark é necessário para identificar qual abordagem se adapta melhor a cada caso.
 
 ---
 
 ## Conclusão
 
-O **GameText Analyzer** cumpre o objetivo do trabalho ao comparar algoritmos seriais, paralelos em CPU e paralelos em GPU/OpenCL para busca de palavras em textos. A aplicação utiliza as amostras obrigatórias, registra os resultados em CSV, executa pelo menos três medições por método e gera gráficos para análise estatística e visual.
+O **GameText Analyzer** cumpriu o objetivo do trabalho ao implementar e comparar diferentes estratégias de busca de palavras em textos, incluindo abordagens seriais, paralelas em CPU e paralelas em GPU/OpenCL. A aplicação utilizou as amostras obrigatórias da atividade, executou múltiplas medições por método, registrou os resultados em CSV e gerou gráficos para análise comparativa.
 
-A principal conclusão é que o paralelismo em CPU foi o mais vantajoso para as amostras analisadas. Estratégias como `ParallelCPU`, `ParallelStream`, `ForkJoin` e `VirtualThreads` reduziram o tempo de execução em relação ao `SerialCPU`, mas o ganho não foi linear. O número de threads, a granularidade dos chunks e o threshold do ForkJoin influenciaram diretamente o desempenho.
+Os resultados mostraram que o paralelismo em CPU foi a abordagem mais vantajosa para as amostras analisadas. Estratégias como `ParallelCPU`, `ForkJoin`, `ParallelStream` e `Virtual Threads` conseguiram reduzir o tempo de execução em relação ao `SerialCPU`, alcançando speedups significativos em várias obras. No entanto, o ganho não foi linear: a eficiência paralela diminuiu conforme o número de threads aumentou, evidenciando overhead de coordenação e limites descritos pela Lei de Amdahl.
 
-A GPU/OpenCL foi tecnicamente implementada e comparada em duas versões: `GPU String` e `GPU Hash`. A versão por hash melhorou o desempenho por transformar a busca textual em comparação numérica, mas ainda não superou as melhores estratégias em CPU. Isso sugere que, para este problema e para o volume das amostras obrigatórias, o overhead de preparação, transferência e leitura da GPU foi maior que o benefício do paralelismo massivo.
+A análise também mostrou que a granularidade das tarefas influencia diretamente o desempenho. Estratégias com chunks fixos, chunks dinâmicos e diferentes thresholds de ForkJoin apresentaram resultados distintos, demonstrando que a forma como o trabalho é dividido pode ser tão importante quanto a quantidade de threads utilizada.
 
-Assim, o trabalho demonstra que **paralelizar não significa automaticamente acelerar**. A escolha da melhor estratégia depende do tamanho da entrada, da natureza da operação, da granularidade das tarefas, do ambiente de execução e do custo de comunicação entre CPU e GPU.
+A GPU/OpenCL foi implementada em diferentes versões para investigar seu comportamento. A versão `GPU String`, baseada em comparação textual direta, apresentou maior custo por exigir offsets, tamanhos variáveis e comparação caractere por caractere. A versão `GPU Hash` reduziu esse custo ao transformar a busca em uma comparação numérica baseada em `hashCode + length`, tornando o kernel mais simples e uniforme. A versão `GPU HashReduction` acrescentou redução parcial na GPU, diminuindo o volume de dados retornado para a CPU.
+
+Mesmo com essas otimizações, a GPU não superou as melhores estratégias em CPU nas amostras analisadas, principalmente por causa do overhead de preparação, transferência de dados e leitura dos resultados. Esse resultado não invalida o uso de GPU; pelo contrário, mostra que o ganho da GPU depende fortemente da natureza do problema, do volume de dados e da relação entre custo de transferência e custo computacional.
+
+Portanto, a principal conclusão do trabalho é que **paralelizar não garante automaticamente melhor desempenho**. A eficiência de uma estratégia depende do tamanho da entrada, da natureza da operação, da granularidade das tarefas, da arquitetura utilizada e do custo de comunicação entre CPU e GPU. Para este problema específico, as estratégias paralelas em CPU apresentaram o melhor equilíbrio entre simplicidade, desempenho e baixo overhead, enquanto a GPU se mostrou uma alternativa tecnicamente interessante, mas menos vantajosa para o volume e o tipo de processamento exigidos pelas amostras obrigatórias.
 
 ---
 
