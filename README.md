@@ -1,4 +1,4 @@
-# 🎮 GameText Analyzer
+# GameText Analyzer
 ### Benchmark modular de estratégias de paralelização aplicado à busca de palavras em textos literários
 
 ---
