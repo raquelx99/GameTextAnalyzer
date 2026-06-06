@@ -5,7 +5,7 @@
 
 ## Resumo
 
-O **GameText Analyzer** é uma aplicação em Java desenvolvida para comparar o desempenho de diferentes estratégias de busca/contagem de palavras em arquivos `.txt`. O trabalho utiliza as amostras obrigatórias fornecidas na atividade — **Don Quixote**, **Dracula** e **Moby Dick** — e executa benchmarks entre métodos seriais, paralelos em CPU e paralelos em GPU/OpenCL.
+O **GameText Analyzer** é uma aplicação em Java desenvolvida para comparar o desempenho de diferentes estratégias de busca/contagem de palavras em arquivos `.txt`. O trabalho utiliza as amostras obrigatórias fornecidas na atividade: **Don Quixote**, **Dracula** e **Moby Dick**, e executa benchmarks entre métodos seriais, paralelos em CPU e paralelos em GPU/OpenCL.
 
 Para manter uma conexão com jogos digitais, as obras foram interpretadas como **mundos narrativos** que poderiam servir de base para adaptações em jogos:
 
