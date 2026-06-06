@@ -178,10 +178,10 @@ Dentro de cada aba, os gráficos podem ser navegados pelos botões **Anterior** 
 | Tempo normalizado por 100 mil palavras | `charts/chart_07_tempo_normalizado.png` | Remove o viés de tamanho e compara a velocidade real entre textos. |
 | Três execuções individuais | `charts/chart_08_tres_execucoes.png` | Mostra as 3 amostras exigidas no enunciado e a estabilidade dos métodos. |
 | Média e desvio padrão | `charts/chart_09_media_desvio.png` | Reforça a análise estatística com média ± desvio padrão. |
-| CPU vs GPU: String e Hash | `charts/chart_10_gpu_vs_cpu.png` | Compara SerialCPU, melhor CPU paralela, GPU String e GPU Hash. |
+| CPU vs GPU: String, Hash e Hash Reduction | `charts/chart_10_gpu_vs_cpu.png` | Compara SerialCPU, melhor CPU paralela, GPU String, GPU Hash e GPU Hash Reduction. |
 | Granularidade de chunks | `charts/chart_11_chunks.png` | Compara chunks fixos e dinâmicos no ParallelCPU. |
 | Thresholds do ForkJoin | `charts/chart_12_forkjoin_thresholds.png` | Compara thresholds fixos e dinâmicos no ForkJoin. |
-| Decomposição do tempo da GPU | `charts/chart_13_gpu_prep_kernel.png` | Separa preparação, execução OpenCL e leitura do resultado. |
+| Decomposição do tempo da GPU | `charts/chart_13_gpu_prep_kernel.png` | Separa preparação, execução/leitura e total, evidenciando o custo de buffers, transferência e retorno dos resultados. |
 | Resumo final - melhor método por amostra | `charts/chart_14_best_method_summary.png` | Tabela-resumo para conclusão do relatório: vencedor, tempo, speedup e família. |
 
 ### Discussões esperadas
@@ -189,7 +189,7 @@ Dentro de cada aba, os gráficos podem ser navegados pelos botões **Anterior** 
 - Em textos menores, o `SerialCPU` pode ser competitivo porque não possui overhead de criação de threads.
 - Em textos maiores, o `ParallelCPU` pode apresentar ganhos por dividir o vetor de palavras entre múltiplas threads.
 - Aumentar o número de threads nem sempre melhora o desempenho, pois pode haver overhead de criação, escalonamento e sincronização.
-- A GPU pode ter overhead alto por causa da transferência de dados e preparação do kernel OpenCL.
+- A GPU pode ter overhead alto por causa da preparação dos dados, criação/reuso de buffers, transferência CPU↔GPU e leitura dos resultados. Por isso foram comparadas três variantes: `GPU String`, `GPU Hash` e `GPU Hash Reduction`.
 - Caso apareça `ParallelGPU-FallbackCPU`, significa que o ambiente não executou GPU real; nesse caso, os resultados devem ser interpretados como fallback em CPU paralela.
 
 ---

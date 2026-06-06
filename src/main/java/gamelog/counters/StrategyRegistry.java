@@ -44,6 +44,7 @@ public final class StrategyRegistry {
         // Variantes GPU: comparação exata de string e comparação numérica baseada em hash
         strategies.add(new ParallelGPUCounter());
         strategies.add(new ParallelGPUHashCounter());
+        strategies.add(new ParallelGPUHashReductionCounter());
         return strategies;
     }
 }

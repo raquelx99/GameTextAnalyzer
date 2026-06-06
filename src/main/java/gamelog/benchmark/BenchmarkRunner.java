@@ -155,6 +155,7 @@ public class BenchmarkRunner {
             if (counter instanceof ForkJoinCPUCounter fjc) fjc.shutdown();
             if (counter instanceof ParallelGPUCounter gpu) gpu.release();
             if (counter instanceof ParallelGPUHashCounter gpuHash) gpuHash.release();
+            if (counter instanceof ParallelGPUHashReductionCounter gpuHashReduction) gpuHashReduction.release();
         }
     }
 

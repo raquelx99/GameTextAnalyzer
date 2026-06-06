@@ -49,9 +49,10 @@ import java.util.stream.Collectors;
  *                                      Análise estatística pedida explicitamente.
  *
  *  BLOCO 5 — ANÁLISE DA GPU (método mais complexo do trabalho)
- *  10. chart_10_gpu_vs_cpu           — GPU String e GPU Hash vs melhor CPU paralela
- *                                      vs SerialCPU. Mostra se a GPU compensa ou não
- *                                      em relação às melhores estratégias em CPU.
+ *  10. chart_10_gpu_vs_cpu           — GPU String, GPU Hash e GPU Hash Reduction
+ *                                      vs melhor CPU paralela vs SerialCPU. Mostra
+ *                                      se a GPU compensa ou não em relação às
+ *                                      melhores estratégias em CPU.
  *  13. chart_13_gpu_prep_kernel      — decomposição do tempo da GPU: preparação dos
  *                                      dados, execução/leitura do kernel e tempo total.
  *                                      Ajuda a explicar o overhead da GPU.
@@ -75,7 +76,7 @@ import java.util.stream.Collectors;
  *
  *  – Estratégias modulares:
  *      SerialCPU, ParallelCPU, ParallelStream, ForkJoin, Virtual Threads,
- *      GPU String e GPU Hash podem ser analisadas individualmente ou em conjunto.
+ *      GPU String, GPU Hash e GPU Hash Reduction podem ser analisadas individualmente ou em conjunto.
  *
  * Regras de legibilidade aplicadas:
  *  – Máximo 6 séries principais por gráfico de barras agrupadas.
@@ -83,7 +84,7 @@ import java.util.stream.Collectors;
  *  – Cada gráfico tem subtítulo que explica como interpretá-lo.
  *  – Cores consistentes: SerialCPU, CPU paralela, ForkJoin, ParallelStream,
  *    Virtual Threads e GPU mantêm identidade visual própria.
- *  – GPU String e GPU Hash são diferenciadas explicitamente.
+ *  – GPU String, GPU Hash e GPU Hash Reduction são diferenciadas explicitamente.
  */
 public class ChartGenerator {
 
@@ -407,16 +408,18 @@ public class ChartGenerator {
 
     /**
      * 10. GPU vs melhor CPU paralela vs SerialCPU.
-     * Apenas 3 séries. GPU String e GPU Hash são opcionais, incluídas se presentes.
+     * GPU String, GPU Hash e GPU Hash Reduction são opcionais, incluídas se presentes.
      */
     private static BufferedImage chart10_GpuVsCpu(List<BenchmarkResult> r) {
         String gpuString = gpuLabelContaining(r, "String");
-        String gpuHash = gpuLabelContaining(r, "Hash");
+        String gpuHash = gpuLabelExactHash(r);
+        String gpuHashReduction = gpuLabelContaining(r, "HashReduction");
         List<String> series  = new ArrayList<>();
         series.add("SerialCPU");
         series.add("Melhor CPU paralela");
         if (gpuString != null) series.add(gpuString);
         if (gpuHash != null) series.add(gpuHash);
+        if (gpuHashReduction != null) series.add(gpuHashReduction);
         List<Color>  palette = series.stream().map(ChartGenerator::colorForMethod).collect(Collectors.toList());
         List<String> files   = orderedFiles(r);
 
@@ -427,12 +430,13 @@ public class ChartGenerator {
             row.put("Melhor CPU paralela", bestParallelMedian(r, f));
             if (gpuString != null) row.put(gpuString, medianTime(r, f, gpuString));
             if (gpuHash != null) row.put(gpuHash, medianTime(r, f, gpuHash));
+            if (gpuHashReduction != null) row.put(gpuHashReduction, medianTime(r, f, gpuHashReduction));
             data.put(shortName(f), row);
         }
 
         return barChart(
-            "10. CPU vs GPU: comparação por string e por hash",
-            "Compara SerialCPU, melhor CPU paralela, GPU String e GPU Hash.  Menor tempo = melhor.",
+            "10. CPU vs GPU: string, hash e redução",
+            "Compara SerialCPU, melhor CPU paralela, GPU String, GPU Hash e GPU Hash Reduction.  Menor tempo = melhor.",
             "Texto / Obra literária", "Tempo mediano (ms)",
             data, series, palette);
     }
@@ -491,8 +495,8 @@ public class ChartGenerator {
         if (data.isEmpty()) data.put("Sem GPU", Map.of("Preparação", 0.0, "Kernel/leitura", 0.0, "Total", 0.0));
         List<String> series = List.of("Preparação", "Kernel/leitura", "Total");
         return barChart(
-                "13. GPU: preparação vs kernel/leitura",
-                "Mostra quanto do tempo da GPU é overhead de dados e quanto é execução/leitura do resultado.",
+                "13. Decomposição do tempo da GPU",
+                "Preparação = conversão/buffers; kernel/leitura = execução OpenCL e retorno do resultado.",
                 "Método GPU: " + shortName(biggest), "Tempo mediano (ms)",
                 data, series, List.of(C_CPU4, C_PSTREAM, C_GPU));
     }
@@ -1068,6 +1072,12 @@ public class ChartGenerator {
             .findFirst().orElse(null);
     }
 
+    private static String gpuLabelExactHash(List<BenchmarkResult> r) {
+        return r.stream().map(x -> x.method)
+            .filter(m -> m.startsWith("ParallelGPU") && m.contains("Hash") && !m.contains("HashReduction"))
+            .findFirst().orElse(null);
+    }
+
     private static List<String> orderedFiles(List<BenchmarkResult> r) {
         List<String> order = List.of("donquixote","dracula","mobydick","moby");
         return r.stream().map(x -> x.file).distinct()
@@ -1094,6 +1104,7 @@ public class ChartGenerator {
         if (m.startsWith("ParallelStream"))  return 90;
         if (m.startsWith("VirtualThreads"))  return 200 + extractInt(m,'-','c');
         if (m.contains("GPU-String"))        return 10000;
+        if (m.contains("GPU-HashReduction")) return 10020;
         if (m.contains("GPU-Hash"))          return 10010;
         if (m.startsWith("ParallelGPU"))     return 10000;
         return 20000;
@@ -1163,6 +1174,8 @@ public class ChartGenerator {
             case "ParallelGPU-String-FallbackCPU" -> "GPU String FB";
             case "ParallelGPU-Hash" -> "GPU Hash";
             case "ParallelGPU-Hash-FallbackCPU" -> "GPU Hash FB";
+            case "ParallelGPU-HashReduction" -> "GPU Hash Red.";
+            case "ParallelGPU-HashReduction-FallbackCPU" -> "GPU Hash Red. FB";
             case "ParallelGPU-FallbackCPU" -> "GPU (fallback)";
             case "Melhor CPU paralela"     -> "Melhor CPU par.";
             case "Run 1"           -> "Run 1";
